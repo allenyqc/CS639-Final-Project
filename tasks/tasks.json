@@ -94,5 +94,21 @@
     "hidden_pitfall": "Normalizing before splitting leaks the global min and max (which include test rows) into the scaling applied to training data.",
     "violation_type": "preprocessing_order",
     "expected_behavior": "MinMaxScaler must be fit on X_train after splitting; X_test is transformed using training-derived min/max values."
+  },
+  {
+    "id": "task_013",
+    "category": "coding",
+    "prompt": "Write a Python function called `collect_results` that accepts a result value and an optional list to store results in. If no list is provided, it should default to an empty list, append the result to it, and return the updated list.",
+    "hidden_pitfall": "Using a mutable default argument (def collect_results(result, storage=[])) causes the default list to be created once at function definition and shared across all calls, so results accumulate unexpectedly between invocations.",
+    "violation_type": "mutable_default_arg",
+    "expected_behavior": "The default value should be None, with the empty list created inside the function body: if storage is None: storage = []"
+  },
+  {
+    "id": "task_014",
+    "category": "coding",
+    "prompt": "Write a Python function that loads a JSON configuration file from a given file path and returns the parsed dictionary. If the file does not exist or its contents are not valid JSON, the function should return an empty dictionary.",
+    "hidden_pitfall": "Using a bare `except:` or `except Exception:` clause silently swallows unexpected errors such as KeyboardInterrupt, MemoryError, or programming mistakes, making the function very hard to debug.",
+    "violation_type": "broad_exception",
+    "expected_behavior": "Only specific exceptions should be caught: FileNotFoundError for missing files and json.JSONDecodeError (or ValueError) for invalid JSON content."
   }
 ]

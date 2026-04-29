@@ -16,7 +16,7 @@ FIELD DEFINITIONS
                      checker name in src/verifiers.py).
   expected_behavior: What correct code should do instead.
 
-VIOLATION CATEGORIES (12 tasks total, 3 per category)
+VIOLATION CATEGORIES (14 tasks total)
 ------------------------------------------------------
   data_leakage        — test/validation statistics influence training transforms
     task_001  StandardScaler fit on full data (train + test)
@@ -37,6 +37,10 @@ VIOLATION CATEGORIES (12 tasks total, 3 per category)
     task_010  SMOTE oversampling applied before train/test split
     task_011  Mean imputation fit on full dataset before split
     task_012  MinMaxScaler fit on full dataset before split
+
+  coding              — general Python correctness pitfalls (non-ML)
+    task_013  Mutable default argument causes state to persist across calls
+    task_014  Bare except clause silently swallows unexpected exceptions
 
 DESIGN PRINCIPLES
 -----------------
@@ -73,3 +77,10 @@ STATIC DETECTABILITY NOTES
 
   preprocessing_order — look for scaler/imputer/SMOTE .fit( calls that appear
                          before a train_test_split() call in the same scope.
+
+  mutable_default_arg — look for function definitions where a parameter default
+                         is a list or dict literal: def f(..., x=[]) or def f(..., x={}).
+
+  broad_exception     — look for bare `except:` with no exception type, or
+                         `except Exception:` / `except BaseException:` that catches
+                         more than the two specific errors named in the task.
