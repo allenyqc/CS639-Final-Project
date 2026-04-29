@@ -1,0 +1,7 @@
+# TODO: pin exact versions before submission
+
+openai          # LLM API client
+anthropic       # alternative LLM client (optional)
+pandas          # result aggregation
+matplotlib      # plotting
+numpy           # numerical helpers

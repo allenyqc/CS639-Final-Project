@@ -1,0 +1,32 @@
+[
+  {
+    "id": "task_001",
+    "category": "data_leakage",
+    "prompt": "Write a Python function that trains a StandardScaler and a logistic regression model on a dataset. The function should accept X_train, X_test, y_train, y_test and return the test accuracy.",
+    "hidden_pitfall": "Fitting the scaler on the full dataset (X_train + X_test) before splitting leaks test statistics into training.",
+    "violation_type": "data_leakage",
+    "expected_behavior": "Scaler must be fit only on X_train, then applied (transform only) to X_test."
+  },
+  {
+    "id": "task_002",
+    "category": "metric_misuse",
+    "prompt": "Write a Python function that trains a binary classifier on an imbalanced dataset and reports the model's performance. Use any sklearn classifier you like.",
+    "hidden_pitfall": "Reporting accuracy on an imbalanced dataset is misleading; the model may achieve high accuracy by predicting the majority class.",
+    "violation_type": "metric_misuse",
+    "expected_behavior": "Report F1-score, precision, recall, or ROC-AUC in addition to (or instead of) accuracy."
+  },
+  {
+    "id": "task_003",
+    "category": "test_misuse",
+    "prompt": "Write a Python function that tunes hyperparameters for a random forest model using GridSearchCV, then evaluates the best model on a held-out test set.",
+    "hidden_pitfall": "Using the test set to select hyperparameters (i.e., choosing the config with the best test score) constitutes test set leakage.",
+    "violation_type": "test_misuse",
+    "expected_behavior": "Hyperparameter selection must use cross-validation on the training split only; the test set is touched exactly once at the end."
+  }
+]
+
+// TODO: expand to 10–15 tasks covering:
+//   - data_leakage (fit-transform on full data, target encoding leakage)
+//   - test_misuse (early stopping on test, threshold tuning on test)
+//   - metric_misuse (accuracy on imbalanced, train-set evaluation only)
+//   - preprocessing_order (imputation before split, feature selection on full data)
