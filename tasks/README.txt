@@ -13,32 +13,63 @@ FIELD DEFINITIONS
                      the pitfall in the prompt text.
   hidden_pitfall   : Human-readable description of the mistake we are testing for.
   violation_type   : Machine-readable label used by verifiers (must match a
-                     verifier function name in src/verifiers.py).
+                     checker name in src/verifiers.py).
   expected_behavior: What correct code should do instead.
 
-VIOLATION CATEGORIES
---------------------
-  data_leakage       — test/validation data influences training (e.g. fit
-                       scaler on full dataset, use future data in features)
-  test_misuse        — test set used more than once (hyperparameter tuning,
-                       threshold selection, early stopping on test)
-  metric_misuse      — misleading or wrong evaluation metric (accuracy on
-                       imbalanced data, reporting train-set score only)
-  preprocessing_order — transforms applied before the train/test split
+VIOLATION CATEGORIES (12 tasks total, 3 per category)
+------------------------------------------------------
+  data_leakage        — test/validation statistics influence training transforms
+    task_001  StandardScaler fit on full data (train + test)
+    task_004  Target encoding means computed on full dataset
+    task_005  PCA fit on full dataset before split
+
+  test_misuse         — test set used more than once
+    task_003  GridSearchCV evaluated directly on test set
+    task_006  Classification threshold selected by optimizing test F1
+    task_007  Mutual-information feature selection uses test labels
+
+  metric_misuse       — misleading or incomplete evaluation metric
+    task_002  Accuracy only on heavily imbalanced binary dataset
+    task_008  Only training-set metric reported (no held-out evaluation)
+    task_009  Micro-accuracy only on multi-class with class imbalance
+
+  preprocessing_order — transforms applied to the full dataset before splitting
+    task_010  SMOTE oversampling applied before train/test split
+    task_011  Mean imputation fit on full dataset before split
+    task_012  MinMaxScaler fit on full dataset before split
 
 DESIGN PRINCIPLES
 -----------------
-  1. Prompts should be natural and unambiguous about the task goal.
-  2. The pitfall must be subtle enough that a capable LLM plausibly falls for it.
-  3. There should be a clear, detectable signal in the generated code that
-     reveals the violation (so verifiers can check it without executing code).
-  4. Each (category, sub-type) pair should appear at least twice in the
-     benchmark for statistical reliability.
+  1. Prompts must be natural and pitfall-neutral — do not hint at the mistake.
+  2. The pitfall must be subtle enough that a capable LLM plausibly commits it.
+  3. The violation must produce a statically detectable signal in the generated
+     code (e.g., a specific call pattern) so verifiers can check without running it.
+  4. Each category has exactly 3 tasks, providing a balanced benchmark.
 
-TODO
-----
-  - Define 10–15 total tasks across all categories above
-  - Ensure at least 3 tasks per category
-  - Validate that each hidden_pitfall is statically detectable (or document
-    why it requires execution-based checking)
-  - Add a "difficulty" field (easy / medium / hard) once pilot results are in
+ADDING NEW TASKS
+----------------
+  - Follow the same JSON schema (all 6 fields required).
+  - Choose a violation_type that corresponds to an existing checker in
+    src/verifiers.py, or add a new checker first.
+  - Verify the prompt does not accidentally guide the model toward the correct
+     solution by mentioning the pitfall directly.
+  - Assign the next sequential id (task_013, task_014, ...).
+
+STATIC DETECTABILITY NOTES
+---------------------------
+  All 12 current tasks can be checked with regex or AST pattern matching:
+
+  data_leakage      — look for .fit( / .fit_transform( on a variable that is
+                       not clearly restricted to training data (e.g. X, df,
+                       full_data, or both X_train and X_test concatenated).
+
+  test_misuse       — look for GridSearchCV / SelectKBest / threshold loops
+                       that reference X_test or y_test directly as the fit or
+                       scoring target.
+
+  metric_misuse     — look for accuracy_score as the only imported/called metric
+                       when the prompt mentions imbalanced or multi-class data;
+                       or look for score() / predict() called only on training data.
+
+  preprocessing_order — look for scaler/imputer/SMOTE .fit( calls that appear
+                         before a train_test_split() call in the same scope.

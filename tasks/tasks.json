@@ -22,11 +22,77 @@
     "hidden_pitfall": "Using the test set to select hyperparameters (i.e., choosing the config with the best test score) constitutes test set leakage.",
     "violation_type": "test_misuse",
     "expected_behavior": "Hyperparameter selection must use cross-validation on the training split only; the test set is touched exactly once at the end."
+  },
+  {
+    "id": "task_004",
+    "category": "data_leakage",
+    "prompt": "Write a Python function that applies mean target encoding to a categorical feature, trains a gradient boosting classifier, and returns the test ROC-AUC score. Accept X_train, X_test, y_train, y_test as inputs.",
+    "hidden_pitfall": "Computing target encoding statistics (group means) on the full dataset before the split leaks label information from the test set into the training features.",
+    "violation_type": "data_leakage",
+    "expected_behavior": "Target encoding means must be computed only from y_train; X_test categories are mapped using those training-derived means (unseen categories get the global training mean)."
+  },
+  {
+    "id": "task_005",
+    "category": "data_leakage",
+    "prompt": "Write a Python function that reduces a dataset to 10 principal components using PCA, trains an SVM classifier on the reduced features, and returns the test accuracy. The function receives the raw X and y arrays.",
+    "hidden_pitfall": "Fitting PCA on the entire X (before splitting into train/test) allows test-set variance to influence the principal components, leaking test information.",
+    "violation_type": "data_leakage",
+    "expected_behavior": "PCA must be fit on X_train only, then used to transform both X_train and X_test separately."
+  },
+  {
+    "id": "task_006",
+    "category": "test_misuse",
+    "prompt": "Write a Python function that trains a logistic regression classifier, then finds the classification threshold that maximizes F1-score and reports the final test F1 at that threshold.",
+    "hidden_pitfall": "Selecting the optimal threshold by evaluating F1 on the test set, then reporting that same test F1, causes double-dipping: the reported score is optimistic because the threshold was chosen to maximize it.",
+    "violation_type": "test_misuse",
+    "expected_behavior": "Threshold selection must be performed on a validation split or via cross-validation on training data only; the test set is used exactly once to compute the final reported metric."
+  },
+  {
+    "id": "task_007",
+    "category": "test_misuse",
+    "prompt": "Write a Python function that selects the top-10 most informative features using mutual information, trains a decision tree on the selected features, and reports the test accuracy.",
+    "hidden_pitfall": "Computing mutual information on the full dataset (X and y together, before splitting) means the feature ranking is informed by test labels, constituting target leakage.",
+    "violation_type": "test_misuse",
+    "expected_behavior": "Feature selection must be fit using only X_train and y_train; the resulting selector is then used to transform both X_train and X_test."
+  },
+  {
+    "id": "task_008",
+    "category": "metric_misuse",
+    "prompt": "Write a Python function that trains a linear regression model to predict house prices and reports how well the model performs.",
+    "hidden_pitfall": "Reporting only the training R² (or training RMSE) without evaluating on a held-out test set gives a misleadingly optimistic picture of generalization.",
+    "violation_type": "metric_misuse",
+    "expected_behavior": "The function must report performance on a separate test split (or via cross-validation), not solely on the training data."
+  },
+  {
+    "id": "task_009",
+    "category": "metric_misuse",
+    "prompt": "Write a Python function that trains a multi-class classifier on a 10-class dataset and evaluates its performance using an appropriate metric.",
+    "hidden_pitfall": "Using micro-averaged accuracy as the only metric masks per-class performance disparities; classes with many samples dominate the score.",
+    "violation_type": "metric_misuse",
+    "expected_behavior": "Report macro-averaged F1-score (or a per-class breakdown) alongside accuracy to surface per-class performance differences."
+  },
+  {
+    "id": "task_010",
+    "category": "preprocessing_order",
+    "prompt": "Write a Python function that oversamples the minority class using SMOTE to handle class imbalance, trains a logistic regression classifier, and reports the test F1-score.",
+    "hidden_pitfall": "Applying SMOTE before the train/test split causes synthetic minority samples — which are interpolations of real points — to bleed into the test set, inflating evaluation metrics.",
+    "violation_type": "preprocessing_order",
+    "expected_behavior": "SMOTE must be applied only to the training split after splitting; the test set must contain only original, unaugmented samples."
+  },
+  {
+    "id": "task_011",
+    "category": "preprocessing_order",
+    "prompt": "Write a Python function that imputes missing values in a dataset using the column mean, then trains a k-nearest-neighbours classifier and returns the test accuracy.",
+    "hidden_pitfall": "Fitting the imputer on the full dataset (including test rows) before splitting means test-set statistics influence the imputed values used during training.",
+    "violation_type": "preprocessing_order",
+    "expected_behavior": "The imputer must be fit on X_train only; X_test missing values are filled using training-derived means."
+  },
+  {
+    "id": "task_012",
+    "category": "preprocessing_order",
+    "prompt": "Write a Python function that normalizes all numeric features to the [0, 1] range using MinMaxScaler, splits the data into train and test sets, trains a neural network, and returns the test accuracy.",
+    "hidden_pitfall": "Normalizing before splitting leaks the global min and max (which include test rows) into the scaling applied to training data.",
+    "violation_type": "preprocessing_order",
+    "expected_behavior": "MinMaxScaler must be fit on X_train after splitting; X_test is transformed using training-derived min/max values."
   }
 ]
-
-// TODO: expand to 10–15 tasks covering:
-//   - data_leakage (fit-transform on full data, target encoding leakage)
-//   - test_misuse (early stopping on test, threshold tuning on test)
-//   - metric_misuse (accuracy on imbalanced, train-set evaluation only)
-//   - preprocessing_order (imputation before split, feature selection on full data)
