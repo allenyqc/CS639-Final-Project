@@ -1,7 +1,7 @@
-# TODO: pin exact versions before submission
-
-openai          # LLM API client
-anthropic       # alternative LLM client (optional)
-pandas          # result aggregation
-matplotlib      # plotting
-numpy           # numerical helpers
+anthropic>=0.40.0
+openai>=1.30.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+imbalanced-learn>=0.11.0

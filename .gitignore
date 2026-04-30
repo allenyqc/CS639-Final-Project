@@ -1,23 +1,5 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-dist/
-build/
-.venv/
-venv/
-env/
-
-# Secrets
 .env
-*.key
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-
-# Outputs (large generated files — commit selectively)
-outputs/**/*.py
+.venv/
+__pycache__/
+*.pyc
+outputs/
