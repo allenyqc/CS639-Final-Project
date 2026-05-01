@@ -4,8 +4,8 @@ import argparse
 import json
 from typing import Literal
 
-from src import prompts, verifiers, repair, utils
-from src.llm import call_llm
+from . import prompts, verifiers, repair, utils
+from .llm import call_llm
 
 Mode = Literal["baseline", "instruction", "verifier"]
 
@@ -23,16 +23,22 @@ def run_agent(task: dict, mode: Mode) -> dict:
         "mode": mode,
         "code": "",
         "violations": [],
+        "initial_violations": [],
         "repaired": False,
+        "functional_success": None,
     }
 
     if mode == "baseline":
         code = utils.clean_llm_output(_call_llm(prompts.get_baseline_prompt(task)))
         result["code"] = code
+        ver = verifiers.run_verifiers(code, task.get("violation_type"))
+        result["violations"] = ver["violations"]
 
     elif mode == "instruction":
         code = utils.clean_llm_output(_call_llm(prompts.get_instruction_prompt(task)))
         result["code"] = code
+        ver = verifiers.run_verifiers(code, task.get("violation_type"))
+        result["violations"] = ver["violations"]
 
     elif mode == "verifier":
         code = utils.clean_llm_output(_call_llm(prompts.get_baseline_prompt(task)))
@@ -40,6 +46,8 @@ def run_agent(task: dict, mode: Mode) -> dict:
         while True:
             utils.save_code(f"{task_id}_attempt{attempt}", mode, code)
             ver = verifiers.run_verifiers(code, task.get("violation_type"))
+            if attempt == 1:
+                result["initial_violations"] = ver["violations"]
             result["violations"] = ver["violations"]
             if not ver["has_violation"] or attempt > MAX_REPAIR_ATTEMPTS:
                 break

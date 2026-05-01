@@ -4,18 +4,29 @@ import re
 
 
 def check_data_leakage(code: str) -> str | None:
-    # .fit() / .fit_transform() / .fit_resample() on anything that isn't X_train / X_val
-    pattern = r'\.(fit|fit_transform|fit_resample)\(\s*X(?!_train\b)(?!_val\b)|\.fit(?:_transform|_resample)?\(\s*(data|df|dataset|features)\b'
+    # .fit() / .fit_transform() / .fit_resample() on anything that isn't X_train* / X_val*
+    # Uses (?!_(train|val)) so that X_train, X_train_scaled, X_val_processed etc. are all safe.
+    pattern = (
+        r'\.(fit|fit_transform|fit_resample)\(\s*X(?!_(train|val))'
+        r'|\.fit(?:_transform|_resample)?\(\s*(data|df|dataset|features|X_full|X_all)\b'
+    )
     if re.search(pattern, code):
         return "data_leakage: preprocessor fitted on full or test data; fit only on X_train"
     return None
 
 
 def check_preprocessing_order(code: str) -> str | None:
-    # Any .fit() call that appears before train_test_split() in the source
-    fit_pos = re.search(r'\.(fit|fit_transform|fit_resample)\(', code)
     split_pos = re.search(r'train_test_split\(', code)
-    if fit_pos and split_pos and fit_pos.start() < split_pos.start():
+    if not split_pos:
+        return None
+    # Look for fit/fit_transform/fit_resample calls that appear BEFORE train_test_split
+    for m in re.finditer(r'\.(fit|fit_transform|fit_resample)\(', code):
+        if m.start() >= split_pos.start():
+            break
+        # Skip if clearly model training on train data (e.g. model.fit(X_train, y_train))
+        after_paren = code[m.end():m.end() + 30]
+        if re.match(r'\s*X_(train|val)', after_paren):
+            continue
         return "preprocessing_order: preprocessing fitted before train_test_split; split first, then fit on training data only"
     return None
 
@@ -24,24 +35,39 @@ def check_test_misuse(code: str) -> str | None:
     # .fit() called with X_test or y_test as the first argument
     if re.search(r'\.fit\s*\(\s*(X_test|y_test)', code):
         return "test_misuse: model or selector fitted on test data"
-    # Threshold selection loop that references y_test (double-dipping)
-    if re.search(r'for\s+\w+\s+in\s+\w*[Tt]hreshold', code) and 'y_test' in code:
+    # Threshold selection on test data (multiple patterns)
+    if 'y_test' in code and (
+        re.search(r'for\s+\w+\s+in\s+\w*[Tt]hreshold', code)
+        or re.search(r'best_threshold|optimal_threshold', code)
+        or re.search(r'(precision_recall_curve|roc_curve)\s*\(\s*y_test', code)
+    ):
         return "test_misuse: classification threshold selected on test labels; use a validation split instead"
     # SelectKBest / mutual_info fitted on full data (X, y) rather than X_train, y_train
-    if re.search(r'(SelectKBest|mutual_info)\b', code) and re.search(r'\.fit\s*\(\s*X\b', code):
+    if re.search(r'(SelectKBest|mutual_info)\b', code) and re.search(r'\.fit\s*\(\s*X\b(?!_(train|val))', code):
         return "test_misuse: feature selector fitted on full dataset including test labels"
     return None
 
 
 def check_metric_misuse(code: str) -> str | None:
-    # Only accuracy, no complementary metric
-    if re.search(r'accuracy_score', code) and not re.search(
-        r'f1_score|roc_auc_score|classification_report|precision_score|recall_score|average_precision', code
-    ):
+    # Only accuracy_score (explicit), no complementary metric — signals imbalanced/multi-class problem
+    has_explicit_accuracy = re.search(r'accuracy_score', code)
+    has_better_metric = re.search(
+        r'f1_score|roc_auc_score|classification_report|precision_score|recall_score'
+        r'|average_precision|mean_squared_error|r2_score|matthews_corrcoef|cohen_kappa',
+        code,
+    )
+    if has_explicit_accuracy and not has_better_metric:
         return "metric_misuse: only accuracy reported; add F1, AUC, or classification_report for imbalanced/multi-class datasets"
-    # Predict / score called only on training data with no test evaluation
+    # Model evaluated only on training data with no held-out evaluation
     trains_only = re.search(r'\.(score|predict)\s*\(\s*X_train', code)
-    has_test_eval = re.search(r'\.(score|predict)\s*\(\s*X_test', code)
+    has_test_eval = re.search(
+        r'\.(score|predict)\s*\(\s*X_(test|val|hold)'
+        r'|accuracy_score\s*\(\s*y_(test|val)'
+        r'|f1_score\s*\(\s*y_(test|val)'
+        r'|mean_squared_error\s*\(\s*y_(test|val)'
+        r'|r2_score\s*\(\s*y_(test|val)',
+        code,
+    )
     if trains_only and not has_test_eval:
         return "metric_misuse: model evaluated on training data only; report held-out test performance"
     return None

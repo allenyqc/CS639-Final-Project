@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from src import prompts, utils
-from src.llm import call_llm
+from . import prompts, utils
+from .llm import call_llm
 
 
 def repair_code(task: dict, code: str, feedback: str) -> str:
