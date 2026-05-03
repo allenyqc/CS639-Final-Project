@@ -1,0 +1,396 @@
+[
+  {
+    "task_id": "task_001",
+    "mode": "baseline",
+    "code": "from sklearn.preprocessing import StandardScaler\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import accuracy_score\n\ndef train_and_evaluate(X_train, X_test, y_train, y_test):\n    # Initialize the StandardScaler\n    scaler = StandardScaler()\n    \n    # Fit the scaler on the training data and transform both train and test data\n    X_train_scaled = scaler.fit_transform(X_train)\n    X_test_scaled = scaler.transform(X_test)\n    \n    # Initialize the Logistic Regression model\n    model = LogisticRegression()\n    \n    # Train the model on the scaled training data\n    model.fit(X_train_scaled, y_train)\n    \n    # Make predictions on the test data\n    y_pred = model.predict(X_test_scaled)\n    \n    # Calculate and return the test accuracy\n    test_accuracy = accuracy_score(y_test, y_pred)\n    return test_accuracy",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_002",
+    "mode": "baseline",
+    "code": "import numpy as np\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import classification_report, confusion_matrix\nfrom sklearn.utils.class_weight import compute_class_weight\n\ndef train_and_evaluate_binary_classifier():\n    # Generate an imbalanced dataset\n    X, y = make_classification(n_samples=1000, n_features=20, n_informative=15, \n                                n_redundant=5, n_clusters_per_class=2, weights=[0.9, 0.1], \n                                flip_y=0, random_state=42)\n    \n    # Split the dataset into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)\n    \n    # Compute class weights to handle imbalance\n    class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(y), y=y_train)\n    class_weight_dict = {i: class_weights[i] for i in range(len(class_weights))}\n    \n    # Initialize the classifier\n    clf = RandomForestClassifier(random_state=42, class_weight=class_weight_dict)\n    \n    # Train the classifier\n    clf.fit(X_train, y_train)\n    \n    # Make predictions\n    y_pred = clf.predict(X_test)\n    \n    # Evaluate the model\n    print(\"Confusion Matrix:\")\n    print(confusion_matrix(y_test, y_pred))\n    print(\"\\nClassification Report:\")\n    print(classification_report(y_test, y_pred))\n\n# Call the function\ntrain_and_evaluate_binary_classifier()",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_003",
+    "mode": "baseline",
+    "code": "from sklearn.ensemble import RandomForestClassifier\nfrom sklearn.model_selection import GridSearchCV, train_test_split\nfrom sklearn.metrics import accuracy_score, classification_report\n\ndef tune_and_evaluate_random_forest(X, y):\n    \"\"\"\n    Tunes hyperparameters for a Random Forest model using GridSearchCV and evaluates it on a test set.\n\n    Parameters:\n    X (pd.DataFrame or np.ndarray): Feature matrix.\n    y (pd.Series or np.ndarray): Target vector.\n\n    Returns:\n    dict: A dictionary containing the best parameters, test accuracy, and classification report.\n    \"\"\"\n    # Split the data into training and test sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)\n\n    # Define the Random Forest model\n    rf = RandomForestClassifier(random_state=42)\n\n    # Define the hyperparameter grid\n    param_grid = {\n        'n_estimators': [50, 100, 200],\n        'max_depth': [None, 10, 20, 30],\n        'min_samples_split': [2, 5, 10],\n        'min_samples_leaf': [1, 2, 4],\n        'bootstrap': [True, False]\n    }\n\n    # Set up GridSearchCV\n    grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=5, scoring='accuracy', n_jobs=-1, verbose=1)\n\n    # Fit the model to the training data\n    grid_search.fit(X_train, y_train)\n\n    # Get the best model\n    best_rf = grid_search.best_estimator_\n\n    # Evaluate the best model on the test set\n    y_pred = best_rf.predict(X_test)\n    test_accuracy = accuracy_score(y_test, y_pred)\n    class_report = classification_report(y_test, y_pred)\n\n    # Return the results\n    return {\n        'best_params': grid_search.best_params_,\n        'test_accuracy': test_accuracy,\n        'classification_report': class_report\n    }",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_004",
+    "mode": "baseline",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.ensemble import GradientBoostingClassifier\nfrom sklearn.metrics import roc_auc_score\n\ndef mean_target_encoding_and_train(X_train, X_test, y_train, y_test, categorical_feature):\n    # Mean target encoding\n    mean_target = X_train.join(y_train).groupby(categorical_feature)[y_train.name].mean()\n    X_train_encoded = X_train.copy()\n    X_test_encoded = X_test.copy()\n    \n    # Map the mean target encoding to the categorical feature\n    X_train_encoded[categorical_feature] = X_train[categorical_feature].map(mean_target)\n    X_test_encoded[categorical_feature] = X_test[categorical_feature].map(mean_target)\n    \n    # Handle unseen categories in the test set\n    X_test_encoded[categorical_feature] = X_test_encoded[categorical_feature].fillna(y_train.mean())\n    \n    # Train Gradient Boosting Classifier\n    model = GradientBoostingClassifier()\n    model.fit(X_train_encoded, y_train)\n    \n    # Predict probabilities and calculate ROC-AUC score\n    y_pred_proba = model.predict_proba(X_test_encoded)[:, 1]\n    roc_auc = roc_auc_score(y_test, y_pred_proba)\n    \n    return roc_auc",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_005",
+    "mode": "baseline",
+    "code": "from sklearn.decomposition import PCA\nfrom sklearn.svm import SVC\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import accuracy_score\n\ndef pca_svm_classifier(X, y):\n    # Split the dataset into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n    \n    # Standardize the features\n    scaler = StandardScaler()\n    X_train = scaler.fit_transform(X_train)\n    X_test = scaler.transform(X_test)\n    \n    # Reduce the dataset to 10 principal components using PCA\n    pca = PCA(n_components=10)\n    X_train_pca = pca.fit_transform(X_train)\n    X_test_pca = pca.transform(X_test)\n    \n    # Train an SVM classifier on the reduced features\n    svm = SVC(kernel='rbf', random_state=42)\n    svm.fit(X_train_pca, y_train)\n    \n    # Predict on the test set\n    y_pred = svm.predict(X_test_pca)\n    \n    # Calculate and return the test accuracy\n    accuracy = accuracy_score(y_test, y_pred)\n    return accuracy",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_006",
+    "mode": "baseline",
+    "code": "from sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import f1_score, precision_recall_curve\nfrom sklearn.model_selection import train_test_split\n\ndef train_logistic_regression_and_optimize_f1(X, y, test_size=0.2, random_state=42):\n    \"\"\"\n    Trains a logistic regression classifier, finds the optimal classification threshold\n    that maximizes F1-score, and reports the final test F1-score at that threshold.\n\n    Parameters:\n    - X: Features (numpy array or pandas DataFrame)\n    - y: Labels (numpy array or pandas Series)\n    - test_size: Proportion of the dataset to include in the test split\n    - random_state: Random seed for reproducibility\n\n    Returns:\n    - optimal_threshold: The threshold that maximizes F1-score\n    - test_f1: The F1-score on the test set at the optimal threshold\n    \"\"\"\n    # Split the data into training and test sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)\n\n    # Train a logistic regression classifier\n    model = LogisticRegression(random_state=random_state)\n    model.fit(X_train, y_train)\n\n    # Get predicted probabilities for the test set\n    y_probs = model.predict_proba(X_test)[:, 1]\n\n    # Find the optimal threshold that maximizes F1-score\n    precisions, recalls, thresholds = precision_recall_curve(y_test, y_probs)\n    f1_scores = 2 * (precisions * recalls) / (precisions + recalls)\n    optimal_idx = f1_scores.argmax()\n    optimal_threshold = thresholds[optimal_idx]\n\n    # Calculate the final F1-score on the test set at the optimal threshold\n    y_pred_optimal = (y_probs >= optimal_threshold).astype(int)\n    test_f1 = f1_score(y_test, y_pred_optimal)\n\n    return optimal_threshold, test_f1",
+    "violations": [
+      "test_misuse"
+    ],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_007",
+    "mode": "baseline",
+    "code": "from sklearn.feature_selection import mutual_info_classif\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.metrics import accuracy_score\nimport numpy as np\n\ndef select_features_and_train(X, y, test_size=0.2, random_state=42):\n    \"\"\"\n    Selects the top-10 most informative features using mutual information,\n    trains a decision tree on the selected features, and reports the test accuracy.\n\n    Parameters:\n    - X: numpy array or pandas DataFrame, feature matrix\n    - y: numpy array or pandas Series, target vector\n    - test_size: float, proportion of the dataset to include in the test split\n    - random_state: int, random seed for reproducibility\n\n    Returns:\n    - accuracy: float, test accuracy of the decision tree\n    \"\"\"\n    # Split the data into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)\n\n    # Compute mutual information scores\n    mi_scores = mutual_info_classif(X_train, y_train, random_state=random_state)\n\n    # Select the indices of the top-10 features\n    top_10_indices = np.argsort(mi_scores)[-10:]\n\n    # Reduce the feature set to the top-10 features\n    X_train_selected = X_train[:, top_10_indices]\n    X_test_selected = X_test[:, top_10_indices]\n\n    # Train a decision tree classifier on the selected features\n    clf = DecisionTreeClassifier(random_state=random_state)\n    clf.fit(X_train_selected, y_train)\n\n    # Make predictions on the test set\n    y_pred = clf.predict(X_test_selected)\n\n    # Calculate and return the test accuracy\n    accuracy = accuracy_score(y_test, y_pred)\n    return accuracy",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_008",
+    "mode": "baseline",
+    "code": "import numpy as np\nimport pandas as pd\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LinearRegression\nfrom sklearn.metrics import mean_squared_error, r2_score\n\ndef train_and_evaluate_linear_regression(data, target_column):\n    \"\"\"\n    Trains a linear regression model to predict house prices and evaluates its performance.\n\n    Parameters:\n        data (pd.DataFrame): The dataset containing features and target.\n        target_column (str): The name of the target column (house prices).\n\n    Returns:\n        dict: A dictionary containing the model, RMSE, and R^2 score.\n    \"\"\"\n    # Split the data into features (X) and target (y)\n    X = data.drop(columns=[target_column])\n    y = data[target_column]\n\n    # Split the data into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\n    # Initialize the linear regression model\n    model = LinearRegression()\n\n    # Train the model on the training data\n    model.fit(X_train, y_train)\n\n    # Make predictions on the testing data\n    y_pred = model.predict(X_test)\n\n    # Calculate performance metrics\n    rmse = np.sqrt(mean_squared_error(y_test, y_pred))\n    r2 = r2_score(y_test, y_pred)\n\n    # Return the model and performance metrics\n    return {\n        \"model\": model,\n        \"RMSE\": rmse,\n        \"R2\": r2\n    }\n\n# Example usage:\n# Assuming `df` is a pandas DataFrame with house features and a target column named 'price'\n# result = train_and_evaluate_linear_regression(df, 'price')\n# print(\"RMSE:\", result[\"RMSE\"])\n# print(\"R^2:\", result[\"R2\"])",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_009",
+    "mode": "baseline",
+    "code": "from sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import classification_report\n\ndef train_and_evaluate_classifier():\n    # Generate a synthetic 10-class dataset\n    X, y = make_classification(\n        n_samples=1000, \n        n_features=20, \n        n_informative=15, \n        n_redundant=5, \n        n_classes=10, \n        random_state=42\n    )\n    \n    # Split the dataset into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)\n    \n    # Initialize the classifier\n    clf = RandomForestClassifier(random_state=42)\n    \n    # Train the classifier\n    clf.fit(X_train, y_train)\n    \n    # Make predictions on the test set\n    y_pred = clf.predict(X_test)\n    \n    # Evaluate the classifier using a classification report\n    report = classification_report(y_test, y_pred)\n    print(\"Classification Report:\")\n    print(report)\n\n# Call the function to train and evaluate the classifier\ntrain_and_evaluate_classifier()",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_010",
+    "mode": "baseline",
+    "code": "from sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import f1_score\nfrom imblearn.over_sampling import SMOTE\nimport numpy as np\n\ndef train_with_smote(X, y, test_size=0.2, random_state=42):\n    \"\"\"\n    Oversamples the minority class using SMOTE, trains a logistic regression classifier,\n    and reports the test F1-score.\n\n    Parameters:\n    - X: numpy array or pandas DataFrame, feature matrix.\n    - y: numpy array or pandas Series, target vector.\n    - test_size: float, proportion of the dataset to include in the test split.\n    - random_state: int, random seed for reproducibility.\n\n    Returns:\n    - f1: float, F1-score on the test set.\n    \"\"\"\n    # Split the dataset into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)\n\n    # Apply SMOTE to oversample the minority class in the training set\n    smote = SMOTE(random_state=random_state)\n    X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)\n\n    # Train a logistic regression classifier\n    clf = LogisticRegression(random_state=random_state, max_iter=1000)\n    clf.fit(X_train_resampled, y_train_resampled)\n\n    # Predict on the test set\n    y_pred = clf.predict(X_test)\n\n    # Calculate the F1-score\n    f1 = f1_score(y_test, y_pred)\n\n    return f1",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_011",
+    "mode": "baseline",
+    "code": "import numpy as np\nimport pandas as pd\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.neighbors import KNeighborsClassifier\nfrom sklearn.metrics import accuracy_score\n\ndef impute_and_train_knn(data, target_column, n_neighbors=5, test_size=0.2, random_state=42):\n    \"\"\"\n    Imputes missing values using column mean, trains a k-NN classifier, and returns test accuracy.\n    \n    Parameters:\n        data (pd.DataFrame): The dataset containing features and target.\n        target_column (str): The name of the target column.\n        n_neighbors (int): Number of neighbors for k-NN. Default is 5.\n        test_size (float): Proportion of the dataset to include in the test split. Default is 0.2.\n        random_state (int): Random state for reproducibility. Default is 42.\n    \n    Returns:\n        float: Test accuracy of the k-NN classifier.\n    \"\"\"\n    # Separate features and target\n    X = data.drop(columns=[target_column])\n    y = data[target_column]\n    \n    # Impute missing values with column mean\n    imputer = SimpleImputer(strategy='mean')\n    X_imputed = imputer.fit_transform(X)\n    \n    # Split the data into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(\n        X_imputed, y, test_size=test_size, random_state=random_state\n    )\n    \n    # Train k-NN classifier\n    knn = KNeighborsClassifier(n_neighbors=n_neighbors)\n    knn.fit(X_train, y_train)\n    \n    # Predict on the test set\n    y_pred = knn.predict(X_test)\n    \n    # Calculate and return test accuracy\n    accuracy = accuracy_score(y_test, y_pred)\n    return accuracy",
+    "violations": [
+      "preprocessing_order"
+    ],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_012",
+    "mode": "baseline",
+    "code": "import numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import MinMaxScaler\nfrom sklearn.metrics import accuracy_score\nfrom tensorflow.keras.models import Sequential\nfrom tensorflow.keras.layers import Dense\nfrom tensorflow.keras.utils import to_categorical\n\ndef normalize_and_train(data, labels, test_size=0.2, random_state=42):\n    \"\"\"\n    Normalizes numeric features, splits the data, trains a neural network, and returns test accuracy.\n\n    Parameters:\n    - data: np.ndarray, feature matrix\n    - labels: np.ndarray, target labels\n    - test_size: float, proportion of the dataset to include in the test split\n    - random_state: int, random seed for reproducibility\n\n    Returns:\n    - test_accuracy: float, accuracy of the model on the test set\n    \"\"\"\n    # Normalize features to [0, 1] range\n    scaler = MinMaxScaler()\n    data_normalized = scaler.fit_transform(data)\n\n    # Split the data into train and test sets\n    X_train, X_test, y_train, y_test = train_test_split(\n        data_normalized, labels, test_size=test_size, random_state=random_state\n    )\n\n    # Convert labels to one-hot encoding if they are categorical\n    num_classes = len(np.unique(labels))\n    y_train_one_hot = to_categorical(y_train, num_classes)\n    y_test_one_hot = to_categorical(y_test, num_classes)\n\n    # Define a simple neural network\n    model = Sequential([\n        Dense(64, activation='relu', input_shape=(X_train.shape[1],)),\n        Dense(32, activation='relu'),\n        Dense(num_classes, activation='softmax')\n    ])\n\n    # Compile the model\n    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])\n\n    # Train the model\n    model.fit(X_train, y_train_one_hot, epochs=20, batch_size=32, verbose=0)\n\n    # Evaluate the model on the test set\n    y_pred = model.predict(X_test)\n    y_pred_classes = np.argmax(y_pred, axis=1)\n    test_accuracy = accuracy_score(y_test, y_pred_classes)\n\n    return test_accuracy",
+    "violations": [
+      "preprocessing_order"
+    ],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_013",
+    "mode": "baseline",
+    "code": "def collect_results(result, results_list=None):\n    if results_list is None:\n        results_list = []\n    results_list.append(result)\n    return results_list",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_014",
+    "mode": "baseline",
+    "code": "import json\nimport os\n\ndef load_json_config(file_path):\n    \"\"\"\n    Loads a JSON configuration file and returns the parsed dictionary.\n    If the file does not exist or contains invalid JSON, returns an empty dictionary.\n    \n    :param file_path: Path to the JSON configuration file.\n    :return: Parsed dictionary or an empty dictionary on error.\n    \"\"\"\n    if not os.path.exists(file_path):\n        return {}\n    \n    try:\n        with open(file_path, 'r') as file:\n            return json.load(file)\n    except (json.JSONDecodeError, IOError):\n        return {}",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_001",
+    "mode": "instruction",
+    "code": "from sklearn.preprocessing import StandardScaler\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import f1_score\nfrom sklearn.pipeline import Pipeline\n\ndef train_and_evaluate(X_train, X_test, y_train, y_test):\n    \"\"\"\n    Trains a StandardScaler and Logistic Regression model on the training data,\n    and evaluates it using the F1 score on the test data.\n\n    Parameters:\n    - X_train: Training features\n    - X_test: Test features\n    - y_train: Training labels\n    - y_test: Test labels\n\n    Returns:\n    - f1: F1 score on the test data\n    \"\"\"\n    # Create a pipeline with StandardScaler and LogisticRegression\n    pipeline = Pipeline([\n        ('scaler', StandardScaler()),\n        ('logreg', LogisticRegression(random_state=42))\n    ])\n    \n    # Fit the pipeline on the training data\n    pipeline.fit(X_train, y_train)\n    \n    # Predict on the test data\n    y_pred = pipeline.predict(X_test)\n    \n    # Calculate the F1 score\n    f1 = f1_score(y_test, y_pred)\n    \n    return f1",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_002",
+    "mode": "instruction",
+    "code": "import numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import f1_score, roc_auc_score, matthews_corrcoef, classification_report\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.utils.class_weight import compute_class_weight\n\ndef train_and_evaluate_binary_classifier(X, y, random_state=42):\n    \"\"\"\n    Train a binary classifier on an imbalanced dataset and report its performance.\n\n    Parameters:\n    - X: np.ndarray or pd.DataFrame, feature matrix\n    - y: np.ndarray or pd.Series, target vector (binary labels)\n    - random_state: int, random seed for reproducibility\n\n    Returns:\n    - None (prints performance metrics)\n    \"\"\"\n    # Step 1: Train/test split\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=random_state)\n\n    # Step 2: Preprocessing (fit only on training data)\n    scaler = StandardScaler()\n    X_train_scaled = scaler.fit_transform(X_train)\n    X_test_scaled = scaler.transform(X_test)\n\n    # Step 3: Handle class imbalance using class weights\n    class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(y), y=y_train)\n    class_weight_dict = {i: weight for i, weight in enumerate(class_weights)}\n\n    # Step 4: Train the model\n    model = RandomForestClassifier(random_state=random_state, class_weight=class_weight_dict)\n    model.fit(X_train_scaled, y_train)\n\n    # Step 5: Make predictions\n    y_pred = model.predict(X_test_scaled)\n    y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]\n\n    # Step 6: Evaluate performance\n    f1 = f1_score(y_test, y_pred)\n    auc = roc_auc_score(y_test, y_pred_proba)\n    mcc = matthews_corrcoef(y_test, y_pred)\n\n    print(\"Performance Metrics:\")\n    print(f\"F1 Score: {f1:.4f}\")\n    print(f\"AUC: {auc:.4f}\")\n    print(f\"MCC: {mcc:.4f}\")\n    print(\"\\nClassification Report:\")\n    print(classification_report(y_test, y_pred))\n\n# Example usage:\n# Assuming you have an imbalanced dataset with features X and labels y\n# X, y = ... (load your dataset here)\n# train_and_evaluate_binary_classifier(X, y)",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_003",
+    "mode": "instruction",
+    "code": "import numpy as np\nimport pandas as pd\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.model_selection import train_test_split, GridSearchCV\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import f1_score, roc_auc_score, matthews_corrcoef, classification_report\nfrom sklearn.pipeline import Pipeline\n\ndef tune_and_evaluate_rf(X, y, random_state=42):\n    \"\"\"\n    Tunes hyperparameters for a Random Forest model using GridSearchCV and evaluates the best model on a test set.\n\n    Parameters:\n    - X: pd.DataFrame or np.ndarray, feature matrix\n    - y: pd.Series or np.ndarray, target vector\n    - random_state: int, random seed for reproducibility\n\n    Returns:\n    - dict containing evaluation metrics (F1, AUC, MCC) and the best model\n    \"\"\"\n    # Step 1: Train/test split\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=random_state)\n\n    # Step 2: Define preprocessing and model pipeline\n    pipeline = Pipeline([\n        ('scaler', StandardScaler()),  # Scale features\n        ('rf', RandomForestClassifier(random_state=random_state))  # Random Forest model\n    ])\n\n    # Step 3: Define hyperparameter grid for Random Forest\n    param_grid = {\n        'rf__n_estimators': [100, 200, 300],\n        'rf__max_depth': [None, 10, 20, 30],\n        'rf__min_samples_split': [2, 5, 10],\n        'rf__min_samples_leaf': [1, 2, 4]\n    }\n\n    # Step 4: Perform GridSearchCV on training data\n    grid_search = GridSearchCV(\n        estimator=pipeline,\n        param_grid=param_grid,\n        scoring='f1',  # Use F1 score for hyperparameter tuning\n        cv=5,  # 5-fold cross-validation\n        n_jobs=-1,\n        verbose=1\n    )\n    grid_search.fit(X_train, y_train)\n\n    # Step 5: Evaluate the best model on the test set\n    best_model = grid_search.best_estimator_\n    y_pred = best_model.predict(X_test)\n    y_proba = best_model.predict_proba(X_test)[:, 1]\n\n    f1 = f1_score(y_test, y_pred)\n    auc = roc_auc_score(y_test, y_proba)\n    mcc = matthews_corrcoef(y_test, y_pred)\n\n    # Return evaluation metrics and the best model\n    return {\n        'f1_score': f1,\n        'auc': auc,\n        'mcc': mcc,\n        'classification_report': classification_report(y_test, y_pred),\n        'best_model': best_model\n    }",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_004",
+    "mode": "instruction",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.ensemble import GradientBoostingClassifier\nfrom sklearn.metrics import roc_auc_score\nfrom sklearn.model_selection import train_test_split\n\ndef mean_target_encoding_and_train(X_train, X_test, y_train, y_test, cat_feature):\n    \"\"\"\n    Applies mean target encoding to a categorical feature, trains a gradient boosting classifier,\n    and returns the test ROC-AUC score.\n\n    Parameters:\n    - X_train: pd.DataFrame, training features\n    - X_test: pd.DataFrame, test features\n    - y_train: pd.Series, training labels\n    - y_test: pd.Series, test labels\n    - cat_feature: str, name of the categorical feature to encode\n\n    Returns:\n    - roc_auc: float, ROC-AUC score on the test set\n    \"\"\"\n    # Mean target encoding\n    mean_target = X_train.join(y_train).groupby(cat_feature)[y_train.name].mean()\n    X_train[cat_feature + \"_mean_enc\"] = X_train[cat_feature].map(mean_target)\n    X_test[cat_feature + \"_mean_enc\"] = X_test[cat_feature].map(mean_target)\n    \n    # Fill NaN values in test set (if any category in test is not in train)\n    X_test[cat_feature + \"_mean_enc\"].fillna(y_train.mean(), inplace=True)\n    \n    # Drop the original categorical feature\n    X_train = X_train.drop(columns=[cat_feature])\n    X_test = X_test.drop(columns=[cat_feature])\n    \n    # Train Gradient Boosting Classifier\n    model = GradientBoostingClassifier(random_state=42)\n    model.fit(X_train, y_train)\n    \n    # Predict probabilities for ROC-AUC calculation\n    y_pred_proba = model.predict_proba(X_test)[:, 1]\n    \n    # Calculate ROC-AUC score\n    roc_auc = roc_auc_score(y_test, y_pred_proba)\n    \n    return roc_auc",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_005",
+    "mode": "instruction",
+    "code": "import numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.decomposition import PCA\nfrom sklearn.svm import SVC\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import f1_score\nfrom sklearn.pipeline import Pipeline\n\ndef train_svm_with_pca(X, y, test_size=0.2, random_state=42):\n    \"\"\"\n    Reduces the dataset to 10 principal components using PCA, trains an SVM classifier,\n    and evaluates the model using F1 score on the test set.\n\n    Parameters:\n    - X: np.ndarray, feature matrix\n    - y: np.ndarray, target array\n    - test_size: float, proportion of the dataset to include in the test split\n    - random_state: int, random seed for reproducibility\n\n    Returns:\n    - f1: float, F1 score on the test set\n    \"\"\"\n    # Step 1: Train/test split\n    X_train, X_test, y_train, y_test = train_test_split(\n        X, y, test_size=test_size, random_state=random_state, stratify=y\n    )\n    \n    # Step 2: Create a pipeline with scaling, PCA, and SVM\n    pipeline = Pipeline([\n        ('scaler', StandardScaler()),  # Standardize features\n        ('pca', PCA(n_components=10)),  # Reduce to 10 principal components\n        ('svm', SVC(kernel='rbf', random_state=random_state))  # SVM classifier\n    ])\n    \n    # Step 3: Fit the pipeline on training data\n    pipeline.fit(X_train, y_train)\n    \n    # Step 4: Predict on the test set\n    y_pred = pipeline.predict(X_test)\n    \n    # Step 5: Evaluate using F1 score\n    f1 = f1_score(y_test, y_pred, average='weighted')  # Weighted F1 for imbalanced datasets\n    \n    return f1",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_006",
+    "mode": "instruction",
+    "code": "import numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import f1_score, precision_recall_curve\n\ndef train_logistic_regression_with_f1(X, y, test_size=0.2, random_state=42):\n    \"\"\"\n    Trains a logistic regression classifier, finds the optimal classification threshold\n    to maximize F1-score, and reports the final test F1-score at that threshold.\n\n    Parameters:\n    - X: Features (numpy array or pandas DataFrame)\n    - y: Labels (numpy array or pandas Series)\n    - test_size: Proportion of data to use for testing\n    - random_state: Random seed for reproducibility\n\n    Returns:\n    - optimal_threshold: The threshold that maximizes F1-score\n    - test_f1: The F1-score on the test set at the optimal threshold\n    \"\"\"\n    # Step 1: Train/test split\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)\n\n    # Step 2: Preprocessing (fit only on training data)\n    scaler = StandardScaler()\n    X_train_scaled = scaler.fit_transform(X_train)\n    X_test_scaled = scaler.transform(X_test)\n\n    # Step 3: Train logistic regression model\n    model = LogisticRegression(random_state=random_state, max_iter=1000)\n    model.fit(X_train_scaled, y_train)\n\n    # Step 4: Find optimal threshold on training data\n    y_train_proba = model.predict_proba(X_train_scaled)[:, 1]\n    precisions, recalls, thresholds = precision_recall_curve(y_train, y_train_proba)\n    f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-10)  # Avoid division by zero\n    optimal_idx = np.argmax(f1_scores)\n    optimal_threshold = thresholds[optimal_idx]\n\n    # Step 5: Evaluate on the test set using the optimal threshold\n    y_test_proba = model.predict_proba(X_test_scaled)[:, 1]\n    y_test_pred = (y_test_proba >= optimal_threshold).astype(int)\n    test_f1 = f1_score(y_test, y_test_pred)\n\n    return optimal_threshold, test_f1",
+    "violations": [
+      "test_misuse"
+    ],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_007",
+    "mode": "instruction",
+    "code": "import numpy as np\nimport pandas as pd\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.metrics import f1_score, roc_auc_score, matthews_corrcoef\nfrom sklearn.preprocessing import StandardScaler\n\ndef select_top_features_and_train(X, y, random_state=42):\n    \"\"\"\n    Selects the top-10 most informative features using mutual information,\n    trains a decision tree on the selected features, and reports test metrics.\n\n    Parameters:\n    - X: pd.DataFrame, feature matrix\n    - y: pd.Series or np.array, target labels\n    - random_state: int, random seed for reproducibility\n\n    Returns:\n    - metrics: dict, containing F1 score, AUC, and MCC on the test set\n    \"\"\"\n    # Step 1: Train/test split\n    X_train, X_test, y_train, y_test = train_test_split(\n        X, y, test_size=0.2, stratify=y, random_state=random_state\n    )\n\n    # Step 2: Feature selection using mutual information\n    mi_scores = mutual_info_classif(X_train, y_train, random_state=random_state)\n    top_features_idx = np.argsort(mi_scores)[-10:]  # Indices of top-10 features\n    X_train_selected = X_train.iloc[:, top_features_idx]\n    X_test_selected = X_test.iloc[:, top_features_idx]\n\n    # Step 3: Scale the features (fit scaler on training data only)\n    scaler = StandardScaler()\n    X_train_scaled = scaler.fit_transform(X_train_selected)\n    X_test_scaled = scaler.transform(X_test_selected)\n\n    # Step 4: Train a decision tree classifier\n    clf = DecisionTreeClassifier(random_state=random_state)\n    clf.fit(X_train_scaled, y_train)\n\n    # Step 5: Evaluate the model on the test set\n    y_pred = clf.predict(X_test_scaled)\n    y_pred_proba = clf.predict_proba(X_test_scaled)[:, 1]\n\n    # Calculate metrics\n    f1 = f1_score(y_test, y_pred)\n    auc = roc_auc_score(y_test, y_pred_proba)\n    mcc = matthews_corrcoef(y_test, y_pred)\n\n    metrics = {\"F1 Score\": f1, \"AUC\": auc, \"MCC\": mcc}\n    return metrics",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_008",
+    "mode": "instruction",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LinearRegression\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import mean_squared_error, r2_score\nfrom sklearn.pipeline import Pipeline\n\ndef train_and_evaluate_linear_regression(data, target_column):\n    \"\"\"\n    Trains a linear regression model to predict house prices and evaluates its performance.\n\n    Parameters:\n    - data (pd.DataFrame): The dataset containing features and target.\n    - target_column (str): The name of the target column in the dataset.\n\n    Returns:\n    - dict: A dictionary containing model performance metrics.\n    \"\"\"\n    # Step 1: Split the data into train and test sets\n    X = data.drop(columns=[target_column])\n    y = data[target_column]\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\n    # Step 2: Create a pipeline with preprocessing and model\n    pipeline = Pipeline([\n        ('scaler', StandardScaler()),  # Standardize features\n        ('model', LinearRegression())  # Linear regression model\n    ])\n\n    # Step 3: Fit the pipeline on the training data\n    pipeline.fit(X_train, y_train)\n\n    # Step 4: Make predictions on the test data\n    y_pred = pipeline.predict(X_test)\n\n    # Step 5: Evaluate the model\n    mse = mean_squared_error(y_test, y_pred)\n    r2 = r2_score(y_test, y_pred)\n\n    # Return performance metrics\n    return {\n        'Mean Squared Error': mse,\n        'R^2 Score': r2\n    }\n\n# Example usage:\n# data = pd.read_csv('house_prices.csv')  # Load your dataset\n# metrics = train_and_evaluate_linear_regression(data, target_column='price')\n# print(metrics)",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_009",
+    "mode": "instruction",
+    "code": "import numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import classification_report, f1_score\nfrom sklearn.datasets import make_classification\n\ndef train_and_evaluate_classifier():\n    # Step 1: Generate a synthetic 10-class dataset\n    X, y = make_classification(\n        n_samples=5000, \n        n_features=20, \n        n_informative=15, \n        n_classes=10, \n        n_clusters_per_class=1, \n        weights=[0.1] * 10,  # Simulate imbalance\n        random_state=42\n    )\n    \n    # Step 2: Split the data into train and test sets\n    X_train, X_test, y_train, y_test = train_test_split(\n        X, y, test_size=0.2, stratify=y, random_state=42\n    )\n    \n    # Step 3: Preprocess the data (fit scaler only on training data)\n    scaler = StandardScaler()\n    X_train_scaled = scaler.fit_transform(X_train)\n    X_test_scaled = scaler.transform(X_test)\n    \n    # Step 4: Train a multi-class classifier\n    clf = RandomForestClassifier(random_state=42, n_estimators=100)\n    clf.fit(X_train_scaled, y_train)\n    \n    # Step 5: Evaluate the classifier using F1-score (macro)\n    y_pred = clf.predict(X_test_scaled)\n    f1 = f1_score(y_test, y_pred, average='macro')\n    print(f\"Macro F1-Score: {f1:.4f}\")\n    \n    # Optional: Print a detailed classification report\n    print(\"\\nClassification Report:\")\n    print(classification_report(y_test, y_pred))\n\n# Call the function\ntrain_and_evaluate_classifier()",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_010",
+    "mode": "instruction",
+    "code": "import numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import f1_score\nfrom imblearn.over_sampling import SMOTE\n\ndef train_and_evaluate_with_smote(X, y, test_size=0.2, random_state=42):\n    \"\"\"\n    Oversamples the minority class using SMOTE, trains a logistic regression classifier,\n    and reports the test F1-score.\n\n    Parameters:\n    - X: Features (numpy array or pandas DataFrame)\n    - y: Target labels (numpy array or pandas Series)\n    - test_size: Proportion of the dataset to include in the test split\n    - random_state: Random seed for reproducibility\n\n    Returns:\n    - f1: F1-score on the test set\n    \"\"\"\n    # Step 1: Train-test split\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)\n\n    # Step 2: Apply SMOTE to the training data\n    smote = SMOTE(random_state=random_state)\n    X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)\n\n    # Step 3: Scale the features (fit scaler on training data only)\n    scaler = StandardScaler()\n    X_train_resampled = scaler.fit_transform(X_train_resampled)\n    X_test = scaler.transform(X_test)\n\n    # Step 4: Train logistic regression model\n    model = LogisticRegression(random_state=random_state)\n    model.fit(X_train_resampled, y_train_resampled)\n\n    # Step 5: Make predictions and calculate F1-score\n    y_pred = model.predict(X_test)\n    f1 = f1_score(y_test, y_pred)\n\n    return f1",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_011",
+    "mode": "instruction",
+    "code": "import numpy as np\nimport pandas as pd\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.neighbors import KNeighborsClassifier\nfrom sklearn.metrics import f1_score\n\ndef train_knn_with_imputation(data, target_column, test_size=0.2, random_state=42, n_neighbors=5):\n    # Split the data into features and target\n    X = data.drop(columns=[target_column])\n    y = data[target_column]\n    \n    # Perform train-test split\n    X_train, X_test, y_train, y_test = train_test_split(\n        X, y, test_size=test_size, random_state=random_state, stratify=y\n    )\n    \n    # Impute missing values using the mean (fit only on training data)\n    imputer = SimpleImputer(strategy='mean')\n    X_train_imputed = imputer.fit_transform(X_train)\n    X_test_imputed = imputer.transform(X_test)\n    \n    # Standardize features (fit only on training data)\n    scaler = StandardScaler()\n    X_train_scaled = scaler.fit_transform(X_train_imputed)\n    X_test_scaled = scaler.transform(X_test_imputed)\n    \n    # Train a k-nearest neighbors classifier\n    knn = KNeighborsClassifier(n_neighbors=n_neighbors)\n    knn.fit(X_train_scaled, y_train)\n    \n    # Make predictions on the test set\n    y_pred = knn.predict(X_test_scaled)\n    \n    # Evaluate the model using F1 score\n    f1 = f1_score(y_test, y_pred, average='weighted')\n    \n    return f1",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_012",
+    "mode": "instruction",
+    "code": "import numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import MinMaxScaler\nfrom sklearn.metrics import f1_score\nfrom tensorflow.keras.models import Sequential\nfrom tensorflow.keras.layers import Dense\nfrom tensorflow.keras.optimizers import Adam\n\ndef normalize_and_train_nn(X, y, test_size=0.2, random_state=42, epochs=50, batch_size=32):\n    \"\"\"\n    Normalizes numeric features, splits data into train/test sets, trains a neural network, and evaluates it.\n\n    Parameters:\n    - X: numpy array or pandas DataFrame of features.\n    - y: numpy array or pandas Series of labels.\n    - test_size: float, proportion of the dataset to include in the test split.\n    - random_state: int, random seed for reproducibility.\n    - epochs: int, number of epochs to train the neural network.\n    - batch_size: int, batch size for training.\n\n    Returns:\n    - f1: float, F1 score on the test set.\n    \"\"\"\n    # Step 1: Train/test split\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)\n\n    # Step 2: Normalize features using MinMaxScaler (fit only on training data)\n    scaler = MinMaxScaler()\n    X_train_scaled = scaler.fit_transform(X_train)\n    X_test_scaled = scaler.transform(X_test)\n\n    # Step 3: Build a simple neural network\n    model = Sequential([\n        Dense(64, activation='relu', input_shape=(X_train_scaled.shape[1],)),\n        Dense(32, activation='relu'),\n        Dense(1, activation='sigmoid')  # Assuming binary classification\n    ])\n    model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])\n\n    # Step 4: Train the model\n    model.fit(X_train_scaled, y_train, epochs=epochs, batch_size=batch_size, verbose=0)\n\n    # Step 5: Evaluate the model on the test set\n    y_pred_prob = model.predict(X_test_scaled).flatten()\n    y_pred = (y_pred_prob > 0.5).astype(int)\n\n    # Step 6: Calculate F1 score (preferred metric for imbalanced datasets)\n    f1 = f1_score(y_test, y_pred)\n\n    return f1",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_013",
+    "mode": "instruction",
+    "code": "def collect_results(result, results=None):\n    if results is None:\n        results = []\n    try:\n        results.append(result)\n    except AttributeError as e:\n        raise TypeError(\"Provided results argument must be a list.\") from e\n    return results",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_014",
+    "mode": "instruction",
+    "code": "import json\nimport os\n\ndef load_json_config(file_path):\n    \"\"\"\n    Loads a JSON configuration file and returns the parsed dictionary.\n    If the file does not exist or contains invalid JSON, returns an empty dictionary.\n\n    :param file_path: Path to the JSON configuration file.\n    :return: Parsed dictionary or an empty dictionary on error.\n    \"\"\"\n    if not isinstance(file_path, str):\n        raise ValueError(\"file_path must be a string\")\n\n    if not os.path.exists(file_path):\n        return {}\n\n    try:\n        with open(file_path, 'r', encoding='utf-8') as file:\n            return json.load(file)\n    except json.JSONDecodeError:\n        # File exists but contains invalid JSON\n        return {}\n    except OSError:\n        # Handle file-related errors (e.g., permission issues)\n        return {}",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_001",
+    "mode": "verifier",
+    "code": "from sklearn.preprocessing import StandardScaler\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import accuracy_score\n\ndef train_and_evaluate_logistic_regression(X_train, X_test, y_train, y_test):\n    # Initialize the StandardScaler\n    scaler = StandardScaler()\n    \n    # Fit the scaler on the training data and transform both train and test sets\n    X_train_scaled = scaler.fit_transform(X_train)\n    X_test_scaled = scaler.transform(X_test)\n    \n    # Initialize the Logistic Regression model\n    model = LogisticRegression()\n    \n    # Train the model on the scaled training data\n    model.fit(X_train_scaled, y_train)\n    \n    # Predict on the test set\n    y_pred = model.predict(X_test_scaled)\n    \n    # Calculate and return the test accuracy\n    test_accuracy = accuracy_score(y_test, y_pred)\n    return test_accuracy",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_002",
+    "mode": "verifier",
+    "code": "import numpy as np\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import classification_report, confusion_matrix\nfrom sklearn.utils.class_weight import compute_class_weight\n\ndef train_and_evaluate_binary_classifier():\n    # Generate an imbalanced dataset\n    X, y = make_classification(n_samples=1000, n_features=20, n_informative=15, \n                                n_redundant=5, n_clusters_per_class=2, weights=[0.9, 0.1], \n                                random_state=42)\n    \n    # Split the dataset into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)\n    \n    # Compute class weights to handle imbalance\n    class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(y), y=y_train)\n    class_weight_dict = {i: class_weights[i] for i in range(len(class_weights))}\n    \n    # Initialize the classifier\n    clf = RandomForestClassifier(random_state=42, class_weight=class_weight_dict)\n    \n    # Train the classifier\n    clf.fit(X_train, y_train)\n    \n    # Make predictions\n    y_pred = clf.predict(X_test)\n    \n    # Evaluate the model\n    print(\"Confusion Matrix:\")\n    print(confusion_matrix(y_test, y_pred))\n    print(\"\\nClassification Report:\")\n    print(classification_report(y_test, y_pred))\n\n# Call the function\ntrain_and_evaluate_binary_classifier()",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_003",
+    "mode": "verifier",
+    "code": "from sklearn.ensemble import RandomForestClassifier\nfrom sklearn.model_selection import GridSearchCV, train_test_split\nfrom sklearn.metrics import accuracy_score, classification_report\n\ndef tune_and_evaluate_rf(X, y, param_grid=None, test_size=0.2, random_state=42):\n    \"\"\"\n    Tunes hyperparameters for a Random Forest model using GridSearchCV and evaluates the best model.\n\n    Parameters:\n    - X: Features (Pandas DataFrame or NumPy array)\n    - y: Target variable (Pandas Series or NumPy array)\n    - param_grid: Dictionary of hyperparameters to tune (default is None, uses a predefined grid)\n    - test_size: Proportion of the dataset to include in the test split (default is 0.2)\n    - random_state: Random state for reproducibility (default is 42)\n\n    Returns:\n    - best_model: The best Random Forest model from GridSearchCV\n    - test_accuracy: Accuracy of the best model on the test set\n    - classification_report_dict: Classification report as a dictionary\n    \"\"\"\n    # Split the data into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)\n\n    # Default hyperparameter grid if none is provided\n    if param_grid is None:\n        param_grid = {\n            'n_estimators': [100, 200, 300],\n            'max_depth': [None, 10, 20, 30],\n            'min_samples_split': [2, 5, 10],\n            'min_samples_leaf': [1, 2, 4],\n            'bootstrap': [True, False]\n        }\n\n    # Initialize the Random Forest model\n    rf = RandomForestClassifier(random_state=random_state)\n\n    # Perform GridSearchCV\n    grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=5, scoring='accuracy', n_jobs=-1, verbose=1)\n    grid_search.fit(X_train, y_train)\n\n    # Get the best model from GridSearchCV\n    best_model = grid_search.best_estimator_\n\n    # Evaluate the best model on the test set\n    y_pred = best_model.predict(X_test)\n    test_accuracy = accuracy_score(y_test, y_pred)\n    classification_report_dict = classification_report(y_test, y_pred, output_dict=True)\n\n    return best_model, test_accuracy, classification_report_dict",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_004",
+    "mode": "verifier",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.ensemble import GradientBoostingClassifier\nfrom sklearn.metrics import roc_auc_score\n\ndef mean_target_encoding_and_train(X_train, X_test, y_train, y_test, categorical_feature):\n    # Mean target encoding\n    mean_target = X_train.join(y_train).groupby(categorical_feature)[y_train.name].mean()\n    X_train_encoded = X_train.copy()\n    X_test_encoded = X_test.copy()\n    X_train_encoded[categorical_feature] = X_train[categorical_feature].map(mean_target)\n    X_test_encoded[categorical_feature] = X_test[categorical_feature].map(mean_target)\n    \n    # Fill NaN values in case of unseen categories in the test set\n    X_test_encoded[categorical_feature].fillna(y_train.mean(), inplace=True)\n    \n    # Train Gradient Boosting Classifier\n    model = GradientBoostingClassifier()\n    model.fit(X_train_encoded, y_train)\n    \n    # Predict probabilities and calculate ROC-AUC\n    y_pred_proba = model.predict_proba(X_test_encoded)[:, 1]\n    roc_auc = roc_auc_score(y_test, y_pred_proba)\n    \n    return roc_auc",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_005",
+    "mode": "verifier",
+    "code": "from sklearn.decomposition import PCA\nfrom sklearn.svm import SVC\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.metrics import accuracy_score\nfrom sklearn.preprocessing import StandardScaler\n\ndef pca_svm_classifier(X, y):\n    # Split the dataset into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n    \n    # Standardize the training and testing datasets separately to avoid data leakage\n    scaler = StandardScaler()\n    X_train_scaled = scaler.fit_transform(X_train)\n    X_test_scaled = scaler.transform(X_test)\n    \n    # Reduce to 10 principal components using PCA (fit only on training data)\n    pca = PCA(n_components=10)\n    X_train_pca = pca.fit_transform(X_train_scaled)\n    X_test_pca = pca.transform(X_test_scaled)\n    \n    # Train an SVM classifier\n    svm = SVC(kernel='rbf', random_state=42)\n    svm.fit(X_train_pca, y_train)\n    \n    # Predict on the test set\n    y_pred = svm.predict(X_test_pca)\n    \n    # Calculate and return the test accuracy\n    accuracy = accuracy_score(y_test, y_pred)\n    return accuracy",
+    "violations": [],
+    "initial_violations": [
+      "data_leakage"
+    ],
+    "repaired": true,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_006",
+    "mode": "verifier",
+    "code": "import numpy as np\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import f1_score, precision_recall_curve\nfrom sklearn.model_selection import train_test_split\n\ndef train_logistic_regression_and_optimize_threshold(X, y, test_size=0.2, val_size=0.2, random_state=42):\n    \"\"\"\n    Trains a logistic regression classifier, finds the optimal classification threshold\n    that maximizes the F1-score on a validation set, and reports the final test F1-score\n    at that threshold.\n\n    Parameters:\n    - X: np.ndarray, feature matrix\n    - y: np.ndarray, target vector\n    - test_size: float, proportion of the dataset to include in the test split\n    - val_size: float, proportion of the training set to include in the validation split\n    - random_state: int, random seed for reproducibility\n\n    Returns:\n    - optimal_threshold: float, the threshold that maximizes F1-score on the validation set\n    - test_f1: float, the F1-score on the test set at the optimal threshold\n    \"\"\"\n    # Split the data into training+validation and testing sets\n    X_train_val, X_test, y_train_val, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)\n\n    # Further split the training+validation set into training and validation sets\n    X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=val_size, random_state=random_state)\n\n    # Train a logistic regression classifier\n    model = LogisticRegression(random_state=random_state)\n    model.fit(X_train, y_train)\n\n    # Get predicted probabilities for the validation set\n    y_val_probs = model.predict_proba(X_val)[:, 1]\n\n    # Compute precision, recall, and thresholds on the validation set\n    precisions, recalls, thresholds = precision_recall_curve(y_val, y_val_probs)\n\n    # Compute F1-scores for each threshold\n    f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-10)\n\n    # Find the threshold that maximizes the F1-score\n    optimal_idx = np.argmax(f1_scores)\n    optimal_threshold = thresholds[optimal_idx]\n\n    # Get predicted probabilities for the test set\n    y_test_probs = model.predict_proba(X_test)[:, 1]\n\n    # Compute the final F1-score on the test set using the optimal threshold\n    y_test_pred_optimal = (y_test_probs >= optimal_threshold).astype(int)\n    test_f1 = f1_score(y_test, y_test_pred_optimal)\n\n    return optimal_threshold, test_f1",
+    "violations": [
+      "test_misuse"
+    ],
+    "initial_violations": [
+      "test_misuse"
+    ],
+    "repaired": true,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_007",
+    "mode": "verifier",
+    "code": "import numpy as np\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.metrics import accuracy_score\n\ndef select_top_features_and_train(X, y, num_features=10, test_size=0.2, random_state=42):\n    \"\"\"\n    Selects the top `num_features` most informative features using mutual information,\n    trains a decision tree classifier on the selected features, and reports the test accuracy.\n    \n    Parameters:\n        X (numpy.ndarray or pandas.DataFrame): Feature matrix.\n        y (numpy.ndarray or pandas.Series): Target vector.\n        num_features (int): Number of top features to select.\n        test_size (float): Proportion of the dataset to include in the test split.\n        random_state (int): Random seed for reproducibility.\n    \n    Returns:\n        float: Test accuracy of the decision tree classifier.\n    \"\"\"\n    # Split the data into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)\n    \n    # Compute mutual information between each feature and the target\n    mi_scores = mutual_info_classif(X_train, y_train, random_state=random_state)\n    \n    # Get the indices of the top `num_features` features\n    top_features_indices = np.argsort(mi_scores)[-num_features:]\n    \n    # Select the top features for training and testing\n    X_train_selected = X_train[:, top_features_indices]\n    X_test_selected = X_test[:, top_features_indices]\n    \n    # Train a decision tree classifier on the selected features\n    clf = DecisionTreeClassifier(random_state=random_state)\n    clf.fit(X_train_selected, y_train)\n    \n    # Make predictions on the test set\n    y_pred = clf.predict(X_test_selected)\n    \n    # Calculate and return the test accuracy\n    test_accuracy = accuracy_score(y_test, y_pred)\n    return test_accuracy",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_008",
+    "mode": "verifier",
+    "code": "import numpy as np\nimport pandas as pd\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LinearRegression\nfrom sklearn.metrics import mean_squared_error, r2_score\n\ndef train_and_evaluate_linear_regression(data, target_column):\n    \"\"\"\n    Trains a linear regression model to predict house prices and evaluates its performance.\n\n    Parameters:\n    - data (pd.DataFrame): The dataset containing features and target column.\n    - target_column (str): The name of the column to predict (target variable).\n\n    Returns:\n    - model (LinearRegression): The trained linear regression model.\n    - performance (dict): A dictionary containing RMSE and R^2 score.\n    \"\"\"\n    # Split the data into features (X) and target (y)\n    X = data.drop(columns=[target_column])\n    y = data[target_column]\n\n    # Split the data into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\n    # Initialize and train the linear regression model\n    model = LinearRegression()\n    model.fit(X_train, y_train)\n\n    # Make predictions on the test set\n    y_pred = model.predict(X_test)\n\n    # Evaluate the model's performance\n    rmse = np.sqrt(mean_squared_error(y_test, y_pred))\n    r2 = r2_score(y_test, y_pred)\n\n    performance = {\n        \"RMSE\": rmse,\n        \"R^2\": r2\n    }\n\n    print(\"Model Performance:\")\n    print(f\"Root Mean Squared Error (RMSE): {rmse}\")\n    print(f\"R^2 Score: {r2}\")\n\n    return model, performance\n\n# Example usage:\n# Assuming `df` is a pandas DataFrame with house features and a target column 'price'\n# model, performance = train_and_evaluate_linear_regression(df, target_column='price')",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_009",
+    "mode": "verifier",
+    "code": "import numpy as np\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import classification_report\n\ndef train_and_evaluate_classifier():\n    # Generate a synthetic 10-class dataset\n    X, y = make_classification(\n        n_samples=1000, \n        n_features=20, \n        n_informative=15, \n        n_redundant=5, \n        n_classes=10, \n        random_state=42\n    )\n    \n    # Split the dataset into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n    \n    # Initialize the classifier\n    classifier = RandomForestClassifier(random_state=42)\n    \n    # Train the classifier\n    classifier.fit(X_train, y_train)\n    \n    # Make predictions on the test set\n    y_pred = classifier.predict(X_test)\n    \n    # Evaluate the classifier using classification report\n    report = classification_report(y_test, y_pred, digits=4)\n    print(\"Classification Report:\\n\", report)\n\n# Call the function to train and evaluate the classifier\ntrain_and_evaluate_classifier()",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_010",
+    "mode": "verifier",
+    "code": "from sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import f1_score\nfrom imblearn.over_sampling import SMOTE\nimport numpy as np\nimport pandas as pd\n\ndef handle_imbalance_and_train(X, y, test_size=0.2, random_state=42):\n    \"\"\"\n    Oversamples the minority class using SMOTE, trains a logistic regression classifier,\n    and reports the test F1-score.\n\n    Parameters:\n    - X: pd.DataFrame or np.ndarray, feature matrix\n    - y: pd.Series or np.ndarray, target vector\n    - test_size: float, proportion of the dataset to include in the test split\n    - random_state: int, random seed for reproducibility\n\n    Returns:\n    - f1: float, F1-score on the test set\n    \"\"\"\n    # Split the data into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)\n    \n    # Apply SMOTE to oversample the minority class\n    smote = SMOTE(random_state=random_state)\n    X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)\n    \n    # Train a logistic regression model\n    model = LogisticRegression(random_state=random_state, max_iter=1000)\n    model.fit(X_train_resampled, y_train_resampled)\n    \n    # Predict on the test set\n    y_pred = model.predict(X_test)\n    \n    # Calculate the F1-score\n    f1 = f1_score(y_test, y_pred)\n    \n    return f1\n\n# Example usage:\n# Assuming `data` is a pandas DataFrame with features and `target` is the target column\n# X = data.drop(columns=['target'])\n# y = data['target']\n# f1 = handle_imbalance_and_train(X, y)\n# print(f\"Test F1-score: {f1}\")",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_011",
+    "mode": "verifier",
+    "code": "import numpy as np\nimport pandas as pd\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.neighbors import KNeighborsClassifier\nfrom sklearn.metrics import accuracy_score\n\ndef impute_and_train_knn(data, target_column, test_size=0.2, n_neighbors=5, random_state=42):\n    \"\"\"\n    Imputes missing values using column mean, trains a k-NN classifier, and returns test accuracy.\n\n    Parameters:\n        data (pd.DataFrame): The input dataset.\n        target_column (str): The name of the target column.\n        test_size (float): Proportion of the dataset to include in the test split.\n        n_neighbors (int): Number of neighbors for k-NN.\n        random_state (int): Random state for reproducibility.\n\n    Returns:\n        float: Test accuracy of the k-NN classifier.\n    \"\"\"\n    # Separate features and target\n    X = data.drop(columns=[target_column])\n    y = data[target_column]\n\n    # Split the data into training and testing sets\n    X_train, X_test, y_train, y_test = train_test_split(\n        X, y, test_size=test_size, random_state=random_state\n    )\n\n    # Impute missing values using column mean\n    imputer = SimpleImputer(strategy='mean')\n    X_train_imputed = imputer.fit_transform(X_train)\n    X_test_imputed = imputer.transform(X_test)\n\n    # Train a k-NN classifier\n    knn = KNeighborsClassifier(n_neighbors=n_neighbors)\n    knn.fit(X_train_imputed, y_train)\n\n    # Predict on the test set\n    y_pred = knn.predict(X_test_imputed)\n\n    # Calculate and return test accuracy\n    accuracy = accuracy_score(y_test, y_pred)\n    return accuracy",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_012",
+    "mode": "verifier",
+    "code": "import numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import MinMaxScaler\nfrom sklearn.metrics import accuracy_score\nfrom tensorflow.keras.models import Sequential\nfrom tensorflow.keras.layers import Dense\nfrom tensorflow.keras.utils import to_categorical\n\ndef normalize_and_train_nn(X, y, test_size=0.2, random_state=42):\n    \"\"\"\n    Normalizes numeric features, splits data, trains a neural network, and returns test accuracy.\n\n    Parameters:\n    - X: np.ndarray, feature matrix\n    - y: np.ndarray, target vector\n    - test_size: float, proportion of data to use for testing\n    - random_state: int, random seed for reproducibility\n\n    Returns:\n    - test_accuracy: float, accuracy of the model on the test set\n    \"\"\"\n    # Split the data into train and test sets first\n    X_train, X_test, y_train, y_test = train_test_split(\n        X, y, test_size=test_size, random_state=random_state\n    )\n\n    # Normalize features to [0, 1] range using MinMaxScaler\n    scaler = MinMaxScaler()\n    X_train = scaler.fit_transform(X_train)\n    X_test = scaler.transform(X_test)\n\n    # Convert target to one-hot encoding if it's a classification problem\n    if len(np.unique(y)) > 2:  # Assuming multi-class classification\n        y_train = to_categorical(y_train)\n        y_test = to_categorical(y_test)\n\n    # Define a simple neural network model\n    model = Sequential([\n        Dense(64, activation='relu', input_shape=(X_train.shape[1],)),\n        Dense(32, activation='relu'),\n        Dense(y_train.shape[1] if len(y_train.shape) > 1 else 1, activation='softmax' if len(y_train.shape) > 1 else 'sigmoid')\n    ])\n\n    # Compile the model\n    model.compile(optimizer='adam', loss='categorical_crossentropy' if len(y_train.shape) > 1 else 'binary_crossentropy', metrics=['accuracy'])\n\n    # Train the model\n    model.fit(X_train, y_train, epochs=50, batch_size=32, verbose=0)\n\n    # Evaluate the model on the test set\n    y_pred = model.predict(X_test)\n    if len(y_test.shape) > 1:  # Multi-class classification\n        y_pred_classes = np.argmax(y_pred, axis=1)\n        y_test_classes = np.argmax(y_test, axis=1)\n    else:  # Binary classification\n        y_pred_classes = (y_pred > 0.5).astype(int).flatten()\n        y_test_classes = y_test\n\n    # Calculate accuracy\n    test_accuracy = accuracy_score(y_test_classes, y_pred_classes)\n    return test_accuracy",
+    "violations": [],
+    "initial_violations": [
+      "preprocessing_order"
+    ],
+    "repaired": true,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_013",
+    "mode": "verifier",
+    "code": "def collect_results(result, results_list=None):\n    if results_list is None:\n        results_list = []\n    results_list.append(result)\n    return results_list",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  },
+  {
+    "task_id": "task_014",
+    "mode": "verifier",
+    "code": "import json\nimport os\n\ndef load_json_config(file_path):\n    \"\"\"\n    Loads a JSON configuration file and returns the parsed dictionary.\n    If the file does not exist or contains invalid JSON, returns an empty dictionary.\n    \"\"\"\n    if not os.path.exists(file_path):\n        return {}\n    \n    try:\n        with open(file_path, 'r') as file:\n            return json.load(file)\n    except (json.JSONDecodeError, IOError):\n        return {}",
+    "violations": [],
+    "initial_violations": [],
+    "repaired": false,
+    "functional_success": null
+  }
+]
