@@ -84,11 +84,20 @@ if __name__ == "__main__":
         ["baseline", "instruction", "verifier"] if args.mode == "all" else [args.mode]
     )
 
-    all_results: list[dict] = []
-    for mode in modes:
-        all_results.extend(run_all_tasks(tasks, mode))
-
     summary_path = utils.OUTPUTS_DIR / "results.json"
     utils.OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(json.dumps(all_results, indent=2), encoding="utf-8")
+
+    # Load existing results so re-runs of individual modes don't overwrite other modes.
+    existing: list[dict] = []
+    if summary_path.exists():
+        existing = json.loads(summary_path.read_text(encoding="utf-8"))
+
+    new_results: list[dict] = []
+    for mode in modes:
+        new_results.extend(run_all_tasks(tasks, mode))
+
+    # Replace entries for the modes we just ran; keep everything else.
+    ran_modes = set(modes)
+    merged = [r for r in existing if r["mode"] not in ran_modes] + new_results
+    summary_path.write_text(json.dumps(merged, indent=2), encoding="utf-8")
     print(f"\nDone. Results saved to {summary_path}")

@@ -3,6 +3,12 @@ from __future__ import annotations
 import os
 import time
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Set LLM_PROVIDER=openai or LLM_PROVIDER=anthropic in .env to force a provider.
 # If unset, auto-detect: use Anthropic if ANTHROPIC_API_KEY is present, else OpenAI.
 _PROVIDER = os.getenv("LLM_PROVIDER", "").lower()
