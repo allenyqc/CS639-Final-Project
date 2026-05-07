@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from typing import Literal
 
 from . import prompts, verifiers, repair, utils
@@ -16,11 +17,12 @@ def _call_llm(prompt: str) -> str:
     return call_llm(prompts.get_system_message(), prompt)
 
 
-def run_agent(task: dict, mode: Mode) -> dict:
+def run_agent(task: dict, mode: Mode, model: str) -> dict:
     task_id = task["id"]
     result = {
         "task_id": task_id,
         "mode": mode,
+        "model": model,
         "code": "",
         "violations": [],
         "initial_violations": [],
@@ -44,7 +46,7 @@ def run_agent(task: dict, mode: Mode) -> dict:
         code = utils.clean_llm_output(_call_llm(prompts.get_baseline_prompt(task)))
         attempt = 1
         while True:
-            utils.save_code(f"{task_id}_attempt{attempt}", mode, code)
+            utils.save_code(f"{task_id}_attempt{attempt}", mode, code, model)
             ver = verifiers.run_verifiers(code, task.get("violation_type"))
             if attempt == 1:
                 result["initial_violations"] = ver["violations"]
@@ -56,15 +58,15 @@ def run_agent(task: dict, mode: Mode) -> dict:
             attempt += 1
         result["code"] = code
 
-    utils.save_code(task_id, mode, result["code"])
+    utils.save_code(task_id, mode, result["code"], model)
     return result
 
 
-def run_all_tasks(tasks: list[dict], mode: Mode) -> list[dict]:
+def run_all_tasks(tasks: list[dict], mode: Mode, model: str) -> list[dict]:
     results = []
     for task in tasks:
-        print(f"[{mode}] {task['id']} ...")
-        results.append(run_agent(task, mode))
+        print(f"[{model}] [{mode}] {task['id']} ...")
+        results.append(run_agent(task, mode, model))
     return results
 
 
@@ -84,20 +86,21 @@ if __name__ == "__main__":
         ["baseline", "instruction", "verifier"] if args.mode == "all" else [args.mode]
     )
 
+    model_name = os.getenv("LLM_MODEL", 
+        "claude-sonnet-4-6" if os.getenv("ANTHROPIC_API_KEY") else "gpt-4o")
+
     summary_path = utils.OUTPUTS_DIR / "results.json"
     utils.OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Load existing results so re-runs of individual modes don't overwrite other modes.
     existing: list[dict] = []
     if summary_path.exists():
         existing = json.loads(summary_path.read_text(encoding="utf-8"))
 
     new_results: list[dict] = []
     for mode in modes:
-        new_results.extend(run_all_tasks(tasks, mode))
+        new_results.extend(run_all_tasks(tasks, mode, model_name))
 
-    # Replace entries for the modes we just ran; keep everything else.
-    ran_modes = set(modes)
-    merged = [r for r in existing if r["mode"] not in ran_modes] + new_results
+    ran_keys = {(r["model"], r["mode"]) for r in new_results}
+    merged = [r for r in existing if (r.get("model"), r["mode"]) not in ran_keys] + new_results
     summary_path.write_text(json.dumps(merged, indent=2), encoding="utf-8")
     print(f"\nDone. Results saved to {summary_path}")
