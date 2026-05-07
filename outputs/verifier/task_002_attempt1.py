@@ -1,37 +1,45 @@
-import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.utils.class_weight import compute_class_weight
+from sklearn.utils import resample
+import numpy as np
 
-def train_and_evaluate_binary_classifier():
-    # Generate an imbalanced dataset
-    X, y = make_classification(n_samples=1000, n_features=20, n_informative=15, 
-                                n_redundant=5, n_clusters_per_class=2, weights=[0.9, 0.1], 
-                                random_state=42)
+def train_and_evaluate_classifier():
+    # Create an imbalanced dataset
+    X, y = make_classification(n_samples=1000, n_features=20, n_informative=2, 
+                               n_redundant=10, n_clusters_per_class=1, 
+                               weights=[0.9, 0.1], flip_y=0, random_state=42)
     
     # Split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
     
-    # Compute class weights to handle imbalance
-    class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(y), y=y_train)
-    class_weight_dict = {i: class_weights[i] for i in range(len(class_weights))}
+    # Upsample the minority class in the training set
+    X_train_minority = X_train[y_train == 1]
+    y_train_minority = y_train[y_train == 1]
     
-    # Initialize the classifier
-    clf = RandomForestClassifier(random_state=42, class_weight=class_weight_dict)
+    X_train_majority = X_train[y_train == 0]
+    y_train_majority = y_train[y_train == 0]
     
-    # Train the classifier
-    clf.fit(X_train, y_train)
+    X_train_minority_upsampled, y_train_minority_upsampled = resample(X_train_minority, y_train_minority,
+                                                                      replace=True, n_samples=len(y_train_majority),
+                                                                      random_state=42)
     
-    # Make predictions
+    X_train_upsampled = np.vstack((X_train_majority, X_train_minority_upsampled))
+    y_train_upsampled = np.hstack((y_train_majority, y_train_minority_upsampled))
+    
+    # Train a RandomForestClassifier
+    clf = RandomForestClassifier(random_state=42)
+    clf.fit(X_train_upsampled, y_train_upsampled)
+    
+    # Predict on the test set
     y_pred = clf.predict(X_test)
     
-    # Evaluate the model
+    # Report the model's performance
     print("Confusion Matrix:")
     print(confusion_matrix(y_test, y_pred))
     print("\nClassification Report:")
     print(classification_report(y_test, y_pred))
 
-# Call the function
-train_and_evaluate_binary_classifier()
+# Call the function to train and evaluate the classifier
+train_and_evaluate_classifier()

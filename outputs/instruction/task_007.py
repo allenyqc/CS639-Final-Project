@@ -1,52 +1,40 @@
-import numpy as np
-import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import f1_score, roc_auc_score, matthews_corrcoef
+from sklearn.metrics import f1_score
 from sklearn.preprocessing import StandardScaler
+from sklearn.datasets import make_classification
 
-def select_top_features_and_train(X, y, random_state=42):
-    """
-    Selects the top-10 most informative features using mutual information,
-    trains a decision tree on the selected features, and reports test metrics.
+def select_top_features(X_train, y_train, num_features=10):
+    mi = mutual_info_classif(X_train, y_train)
+    top_features_indices = mi.argsort()[-num_features:][::-1]
+    return top_features_indices
 
-    Parameters:
-    - X: pd.DataFrame, feature matrix
-    - y: pd.Series or np.array, target labels
-    - random_state: int, random seed for reproducibility
-
-    Returns:
-    - metrics: dict, containing F1 score, AUC, and MCC on the test set
-    """
-    # Step 1: Train/test split
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=random_state
-    )
-
-    # Step 2: Feature selection using mutual information
-    mi_scores = mutual_info_classif(X_train, y_train, random_state=random_state)
-    top_features_idx = np.argsort(mi_scores)[-10:]  # Indices of top-10 features
-    X_train_selected = X_train.iloc[:, top_features_idx]
-    X_test_selected = X_test.iloc[:, top_features_idx]
-
-    # Step 3: Scale the features (fit scaler on training data only)
+def train_decision_tree(X, y):
+    # Split the data into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    
+    # Select top-10 most informative features using mutual information
+    top_features_indices = select_top_features(X_train, y_train)
+    X_train_selected = X_train[:, top_features_indices]
+    X_test_selected = X_test[:, top_features_indices]
+    
+    # Scale the features
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train_selected)
     X_test_scaled = scaler.transform(X_test_selected)
-
-    # Step 4: Train a decision tree classifier
-    clf = DecisionTreeClassifier(random_state=random_state)
+    
+    # Train a decision tree classifier
+    clf = DecisionTreeClassifier(random_state=42)
     clf.fit(X_train_scaled, y_train)
-
-    # Step 5: Evaluate the model on the test set
+    
+    # Predict and evaluate using F1 score
     y_pred = clf.predict(X_test_scaled)
-    y_pred_proba = clf.predict_proba(X_test_scaled)[:, 1]
+    f1 = f1_score(y_test, y_pred, average='weighted')
+    
+    return f1
 
-    # Calculate metrics
-    f1 = f1_score(y_test, y_pred)
-    auc = roc_auc_score(y_test, y_pred_proba)
-    mcc = matthews_corrcoef(y_test, y_pred)
-
-    metrics = {"F1 Score": f1, "AUC": auc, "MCC": mcc}
-    return metrics
+# Example usage with a synthetic dataset
+X, y = make_classification(n_samples=1000, n_features=20, n_informative=10, n_redundant=10, random_state=42)
+f1 = train_decision_tree(X, y)
+print(f"F1 Score: {f1:.4f}")

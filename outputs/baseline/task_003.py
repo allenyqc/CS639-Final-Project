@@ -1,25 +1,20 @@
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV, train_test_split
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score
 
-def tune_and_evaluate_random_forest(X, y):
-    """
-    Tunes hyperparameters for a Random Forest model using GridSearchCV and evaluates it on a test set.
+def tune_and_evaluate_random_forest():
+    # Load dataset
+    data = load_iris()
+    X, y = data.data, data.target
 
-    Parameters:
-    X (pd.DataFrame or np.ndarray): Feature matrix.
-    y (pd.Series or np.ndarray): Target vector.
-
-    Returns:
-    dict: A dictionary containing the best parameters, test accuracy, and classification report.
-    """
     # Split the data into training and test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Define the Random Forest model
+    # Define the model
     rf = RandomForestClassifier(random_state=42)
 
-    # Define the hyperparameter grid
+    # Define the parameter grid
     param_grid = {
         'n_estimators': [50, 100, 200],
         'max_depth': [None, 10, 20, 30],
@@ -28,10 +23,11 @@ def tune_and_evaluate_random_forest(X, y):
         'bootstrap': [True, False]
     }
 
-    # Set up GridSearchCV
-    grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=5, scoring='accuracy', n_jobs=-1, verbose=1)
+    # Set up the GridSearchCV
+    grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, 
+                               cv=5, n_jobs=-1, verbose=2, scoring='accuracy')
 
-    # Fit the model to the training data
+    # Fit the model
     grid_search.fit(X_train, y_train)
 
     # Get the best model
@@ -39,12 +35,11 @@ def tune_and_evaluate_random_forest(X, y):
 
     # Evaluate the best model on the test set
     y_pred = best_rf.predict(X_test)
-    test_accuracy = accuracy_score(y_test, y_pred)
-    class_report = classification_report(y_test, y_pred)
+    accuracy = accuracy_score(y_test, y_pred)
 
-    # Return the results
-    return {
-        'best_params': grid_search.best_params_,
-        'test_accuracy': test_accuracy,
-        'classification_report': class_report
-    }
+    return best_rf, accuracy
+
+# Example usage
+best_model, test_accuracy = tune_and_evaluate_random_forest()
+print(f"Best Model: {best_model}")
+print(f"Test Accuracy: {test_accuracy}")

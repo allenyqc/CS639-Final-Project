@@ -110,5 +110,21 @@
     "hidden_pitfall": "Using a bare `except:` or `except Exception:` clause silently swallows unexpected errors such as KeyboardInterrupt, MemoryError, or programming mistakes, making the function very hard to debug.",
     "violation_type": "broad_exception",
     "expected_behavior": "Only specific exceptions should be caught: FileNotFoundError for missing files and json.JSONDecodeError (or ValueError) for invalid JSON content."
+  },
+  {
+  "id": "task_015",
+  "category": "coding",
+  "prompt": "Write a Python function called `fetch_with_retry` that takes a URL and an optional list of headers. It should attempt to fetch the URL using the `requests` library, retry up to 3 times on failure with exponential backoff (1s, 2s, 4s), log each failure with the attempt number and error message, and return the response text on success or None if all attempts fail.",
+  "hidden_pitfall": "Using a broad except clause (except Exception or bare except) to catch all errors including KeyboardInterrupt and programming mistakes, making failures impossible to diagnose.",
+  "violation_type": "broad_exception",
+  "expected_behavior": "Only catch specific exceptions like requests.exceptions.RequestException or requests.exceptions.Timeout; let unexpected errors propagate naturally."
+  },
+  {
+  "id": "task_016",
+  "category": "coding",
+  "prompt": "Write a Python function called `build_pipeline` that accepts a list of processing steps (each step is a callable), an optional dictionary of configuration options, and an optional list to collect intermediate results. The function should apply each step sequentially to an input value, store each intermediate result, and return both the final output and the collected results.",
+  "hidden_pitfall": "Using mutable default arguments for steps, config, and results (e.g. steps=[], config={}, results=[]) causes these objects to be shared across all calls, leading to state accumulation bugs that are hard to trace.",
+  "violation_type": "mutable_default_arg",
+  "expected_behavior": "All three mutable parameters should default to None and be initialized inside the function body."
   }
 ]

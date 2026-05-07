@@ -1,49 +1,43 @@
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV, train_test_split
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score
 
-def tune_and_evaluate_rf(X, y, param_grid=None, test_size=0.2, random_state=42):
-    """
-    Tunes hyperparameters for a Random Forest model using GridSearchCV and evaluates the best model.
-
-    Parameters:
-    - X: Features (Pandas DataFrame or NumPy array)
-    - y: Target variable (Pandas Series or NumPy array)
-    - param_grid: Dictionary of hyperparameters to tune (default is None, uses a predefined grid)
-    - test_size: Proportion of the dataset to include in the test split (default is 0.2)
-    - random_state: Random state for reproducibility (default is 42)
-
-    Returns:
-    - best_model: The best Random Forest model from GridSearchCV
-    - test_accuracy: Accuracy of the best model on the test set
-    - classification_report_dict: Classification report as a dictionary
-    """
-    # Split the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
-
-    # Default hyperparameter grid if none is provided
-    if param_grid is None:
-        param_grid = {
-            'n_estimators': [100, 200, 300],
-            'max_depth': [None, 10, 20, 30],
-            'min_samples_split': [2, 5, 10],
-            'min_samples_leaf': [1, 2, 4],
-            'bootstrap': [True, False]
-        }
-
-    # Initialize the Random Forest model
-    rf = RandomForestClassifier(random_state=random_state)
-
-    # Perform GridSearchCV
-    grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=5, scoring='accuracy', n_jobs=-1, verbose=1)
+def tune_and_evaluate_random_forest():
+    # Load dataset
+    data = load_iris()
+    X, y = data.data, data.target
+    
+    # Split the data into training and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    # Define the model
+    rf = RandomForestClassifier(random_state=42)
+    
+    # Define the parameter grid
+    param_grid = {
+        'n_estimators': [50, 100, 200],
+        'max_depth': [None, 10, 20],
+        'min_samples_split': [2, 5, 10],
+        'min_samples_leaf': [1, 2, 4]
+    }
+    
+    # Set up the GridSearchCV
+    grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=5, n_jobs=-1, verbose=2)
+    
+    # Fit the model
     grid_search.fit(X_train, y_train)
-
-    # Get the best model from GridSearchCV
-    best_model = grid_search.best_estimator_
-
+    
+    # Get the best model
+    best_rf = grid_search.best_estimator_
+    
     # Evaluate the best model on the test set
-    y_pred = best_model.predict(X_test)
-    test_accuracy = accuracy_score(y_test, y_pred)
-    classification_report_dict = classification_report(y_test, y_pred, output_dict=True)
+    y_pred = best_rf.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    
+    return best_rf, accuracy
 
-    return best_model, test_accuracy, classification_report_dict
+# Example usage
+best_model, test_accuracy = tune_and_evaluate_random_forest()
+print(f"Best Model: {best_model}")
+print(f"Test Set Accuracy: {test_accuracy}")

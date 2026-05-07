@@ -13,12 +13,12 @@ def train_and_evaluate(X_train, X_test, y_train, y_test):
     # Initialize the Logistic Regression model
     model = LogisticRegression()
     
-    # Train the model on the scaled training data
+    # Fit the model on the scaled training data
     model.fit(X_train_scaled, y_train)
     
-    # Make predictions on the test data
+    # Predict on the scaled test data
     y_pred = model.predict(X_test_scaled)
     
-    # Calculate and return the test accuracy
-    test_accuracy = accuracy_score(y_test, y_pred)
-    return test_accuracy
+    # Calculate and return the accuracy
+    accuracy = accuracy_score(y_test, y_pred)
+    return accuracy

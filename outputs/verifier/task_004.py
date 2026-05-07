@@ -1,25 +1,36 @@
 import pandas as pd
-import numpy as np
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import roc_auc_score
 
-def mean_target_encoding_and_train(X_train, X_test, y_train, y_test, categorical_feature):
-    # Mean target encoding
-    mean_target = X_train.join(y_train).groupby(categorical_feature)[y_train.name].mean()
+def mean_target_encoding(X_train, X_test, y_train, categorical_feature):
+    # Calculate mean target for each category
+    target_mean = X_train.groupby(categorical_feature)[y_train.name].mean()
+    
+    # Map the mean target to the train and test sets
     X_train_encoded = X_train.copy()
     X_test_encoded = X_test.copy()
-    X_train_encoded[categorical_feature] = X_train[categorical_feature].map(mean_target)
-    X_test_encoded[categorical_feature] = X_test[categorical_feature].map(mean_target)
+    X_train_encoded[categorical_feature] = X_train[categorical_feature].map(target_mean)
+    X_test_encoded[categorical_feature] = X_test[categorical_feature].map(target_mean)
     
-    # Fill NaN values in case of unseen categories in the test set
-    X_test_encoded[categorical_feature].fillna(y_train.mean(), inplace=True)
+    # Fill NaN values with the global mean target
+    global_mean = y_train.mean()
+    X_train_encoded[categorical_feature].fillna(global_mean, inplace=True)
+    X_test_encoded[categorical_feature].fillna(global_mean, inplace=True)
     
-    # Train Gradient Boosting Classifier
+    return X_train_encoded, X_test_encoded
+
+def train_and_evaluate(X_train, X_test, y_train, y_test, categorical_feature):
+    # Apply mean target encoding
+    X_train_encoded, X_test_encoded = mean_target_encoding(X_train, X_test, y_train, categorical_feature)
+    
+    # Train the gradient boosting classifier
     model = GradientBoostingClassifier()
     model.fit(X_train_encoded, y_train)
     
-    # Predict probabilities and calculate ROC-AUC
+    # Predict probabilities for the test set
     y_pred_proba = model.predict_proba(X_test_encoded)[:, 1]
+    
+    # Calculate the ROC-AUC score
     roc_auc = roc_auc_score(y_test, y_pred_proba)
     
     return roc_auc

@@ -1,65 +1,68 @@
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import f1_score, roc_auc_score, matthews_corrcoef
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import f1_score, roc_auc_score, matthews_corrcoef, classification_report
 from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.datasets import make_classification
+import numpy as np
 
-def tune_and_evaluate_rf(X, y, random_state=42):
-    """
-    Tunes hyperparameters for a Random Forest model using GridSearchCV and evaluates the best model on a test set.
+def tune_and_evaluate(X, y):
+    # Split the data into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-    Parameters:
-    - X: pd.DataFrame or np.ndarray, feature matrix
-    - y: pd.Series or np.ndarray, target vector
-    - random_state: int, random seed for reproducibility
+    # Define numerical and categorical features
+    numerical_features = [i for i in range(X.shape[1])]  # Assuming all features are numerical for simplicity
 
-    Returns:
-    - dict containing evaluation metrics (F1, AUC, MCC) and the best model
-    """
-    # Step 1: Train/test split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=random_state)
-
-    # Step 2: Define preprocessing and model pipeline
-    pipeline = Pipeline([
-        ('scaler', StandardScaler()),  # Scale features
-        ('rf', RandomForestClassifier(random_state=random_state))  # Random Forest model
+    # Preprocessing for numerical data
+    numerical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='mean')),
+        ('scaler', StandardScaler())
     ])
 
-    # Step 3: Define hyperparameter grid for Random Forest
+    # Bundle preprocessing for numerical features
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', numerical_transformer, numerical_features)
+        ])
+
+    # Create a pipeline that combines the preprocessor with a RandomForestClassifier
+    pipeline = Pipeline(steps=[('preprocessor', preprocessor),
+                               ('classifier', RandomForestClassifier(random_state=42))])
+
+    # Define the parameter grid for GridSearchCV
     param_grid = {
-        'rf__n_estimators': [100, 200, 300],
-        'rf__max_depth': [None, 10, 20, 30],
-        'rf__min_samples_split': [2, 5, 10],
-        'rf__min_samples_leaf': [1, 2, 4]
+        'classifier__n_estimators': [50, 100, 200],
+        'classifier__max_depth': [None, 10, 20],
+        'classifier__min_samples_split': [2, 5, 10]
     }
 
-    # Step 4: Perform GridSearchCV on training data
-    grid_search = GridSearchCV(
-        estimator=pipeline,
-        param_grid=param_grid,
-        scoring='f1',  # Use F1 score for hyperparameter tuning
-        cv=5,  # 5-fold cross-validation
-        n_jobs=-1,
-        verbose=1
-    )
+    # Initialize GridSearchCV
+    grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='f1', n_jobs=-1)
+
+    # Fit GridSearchCV
     grid_search.fit(X_train, y_train)
 
-    # Step 5: Evaluate the best model on the test set
+    # Get the best model
     best_model = grid_search.best_estimator_
+
+    # Evaluate the best model on the test set
     y_pred = best_model.predict(X_test)
-    y_proba = best_model.predict_proba(X_test)[:, 1]
+    y_pred_proba = best_model.predict_proba(X_test)[:, 1]
 
     f1 = f1_score(y_test, y_pred)
-    auc = roc_auc_score(y_test, y_proba)
+    auc = roc_auc_score(y_test, y_pred_proba)
     mcc = matthews_corrcoef(y_test, y_pred)
 
-    # Return evaluation metrics and the best model
     return {
+        'best_params': grid_search.best_params_,
         'f1_score': f1,
-        'auc': auc,
-        'mcc': mcc,
-        'classification_report': classification_report(y_test, y_pred),
-        'best_model': best_model
+        'roc_auc_score': auc,
+        'matthews_corrcoef': mcc
     }
+
+# Example usage with a synthetic dataset
+X, y = make_classification(n_samples=1000, n_features=20, n_informative=2, n_redundant=10, n_classes=2, weights=[0.7, 0.3], random_state=42)
+results = tune_and_evaluate(X, y)
+print(results)
