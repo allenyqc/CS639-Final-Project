@@ -55,8 +55,8 @@ codevoyager-lite/
 - [x] Integrate LLM API calls in `src/agent.py`
 - [x] Implement rule-based checks in `src/verifiers.py`
 - [x] Implement repair loop in `src/repair.py`
-- [ ] Define and compute metrics in `src/evaluate.py`
-- [ ] Generate result plots in `results/plots/`
+- [x] Define and compute metrics in `src/evaluate.py`
+- [x] Generate result plots in `results/plots/`
 - [ ] Write full report in `report/report.md`
 
 ## Quick Start

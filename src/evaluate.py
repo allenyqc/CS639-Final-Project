@@ -17,22 +17,24 @@ def load_results() -> list[dict]:
 
 
 def compute_metrics(results: list[dict]) -> pd.DataFrame:
-    """Per-mode summary: violation rate and repair rate."""
-    modes = ["baseline", "instruction", "verifier"]
     rows = []
-    for mode in modes:
-        subset = [r for r in results if r["mode"] == mode]
-        n = len(subset)
-        violated = sum(1 for r in subset if r.get("violations"))
-        repaired = sum(1 for r in subset if r.get("repaired"))
-        rows.append({
-            "mode": mode,
-            "n_tasks": n,
-            "n_violated": violated,
-            "violation_rate": round(violated / n, 3) if n else 0,
-            "n_repaired": repaired,
-            "repair_rate": round(repaired / n, 3) if n else 0,
-        })
+    for model in sorted({r.get("model", "unknown") for r in results}):
+        for mode in ["baseline", "instruction", "verifier"]:
+            subset = [r for r in results if r["mode"] == mode and r.get("model") == model]
+            n = len(subset)
+            if n == 0:
+                continue
+            violated = sum(1 for r in subset if r.get("violations"))
+            repaired = sum(1 for r in subset if r.get("repaired"))
+            rows.append({
+                "model": model,
+                "mode": mode,
+                "n_tasks": n,
+                "n_violated": violated,
+                "violation_rate": round(violated / n, 3),
+                "n_repaired": repaired,
+                "repair_rate": round(repaired / n, 3),
+            })
     return pd.DataFrame(rows)
 
 
