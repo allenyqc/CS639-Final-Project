@@ -1,4 +1,7 @@
 model,mode,n_tasks,n_violated,violation_rate,n_repaired,repair_rate
+claude-opus-4-7,baseline,16,1,0.062,0,0.0
+claude-opus-4-7,instruction,16,1,0.062,0,0.0
+claude-opus-4-7,verifier,16,1,0.062,1,0.062
 claude-sonnet-4-6,baseline,16,2,0.125,0,0.0
 claude-sonnet-4-6,instruction,16,1,0.062,0,0.0
 claude-sonnet-4-6,verifier,16,1,0.062,1,0.062

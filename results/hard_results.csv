@@ -1,0 +1,4 @@
+model,mode,n_tasks,n_violated,violation_rate,n_repaired,repair_rate
+claude-sonnet-4-6,baseline,30,7,0.233,0,0.0
+claude-sonnet-4-6,instruction,30,7,0.233,0,0.0
+claude-sonnet-4-6,verifier,30,3,0.1,6,0.2
